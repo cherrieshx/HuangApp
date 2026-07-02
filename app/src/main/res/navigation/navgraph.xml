@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/navgraph"
+    app:startDestination="@id/HomeFragment">
+
+    <fragment
+        android:id="@+id/HomeFragment"
+        android:name="it.progmob.huangapp.fragments.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home" >
+
+        <action
+            android:id="@+id/action_HomeFragment_to_RecipeDetailFragment"
+            app:destination="@id/RecipeDetailFragment" />
+
+        <action
+            android:id="@+id/action_HomeFragment_to_newRecipeFragment"
+            app:destination="@id/NewRecipeFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/RecipeDetailFragment"
+        android:name="it.progmob.huangapp.fragments.RecipeDetailFragment"
+        android:label="Dettaglio Ricetta"
+        tools:layout="@layout/fragment_recipe_detail">
+
+        <argument
+            android:name="recipeId"
+            app:argType="string" />
+        <argument
+            android:name="recipeName"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_RecipeDetailFragment_to_NewRecipeFragment"
+            app:destination="@id/NewRecipeFragment" />
+        <action
+            android:id="@+id/action_RecipeDetailFragment_to_HomeFragment"
+            app:destination="@id/ProfileFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ProfileFragment"
+        android:name="it.progmob.huangapp.fragments.ProfileFragment"
+        android:label="Profilo"
+        tools:layout="@layout/fragment_profile" >
+
+        <action
+            android:id="@+id/action_ProfileFragment_to_RecipeDetailFragment"
+            app:destination="@id/RecipeDetailFragment"/>
+        <action
+            android:id="@+id/action_ProfileFragment_to_ChangeUsernameFragment"
+            app:destination="@id/ChangeUsernameFragment"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/NewRecipeFragment"
+        android:name="it.progmob.huangapp.fragments.NewRecipeFragment"
+        android:label="Nuova Ricetta"
+        tools:layout="@layout/fragment_new_recipe">
+        <argument
+            android:name="recipeId"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+        <action
+            android:id="@+id/action_NewRecipeFragment_to_HomeFragment"
+            app:destination="@id/HomeFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/ChangeUsernameFragment"
+        android:name="it.progmob.huangapp.fragments.ChangeUsernameFragment"
+        android:label="Cambia Username"
+        tools:layout="@layout/fragment_change_username" />
+
+</navigation>

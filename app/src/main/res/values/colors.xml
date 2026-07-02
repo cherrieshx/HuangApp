@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+
+    <color name="rosso_salmone">#FA8072</color>
+    <color name="rosso_salmone_chiaro">#fab0a7</color>
+    <color name="rosa_salmone_chiaro">#FFD6C9</color>"
+    <color name="background_color">#f7e9e1</color>
+
+
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="grey">#808080</color>
+    <color name="rosso">#D32F2F</color>
+    <color name="grigio_chiaro">#ebe8e6</color>
+
+
+</resources>
+

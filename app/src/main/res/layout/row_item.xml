@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+        <variable
+            name="ingredientVM"
+            type="it.progmob.huangapp.ui.data.model.Recipes" />
+        <variable
+            name="stepVM"
+            type="it.progmob.huangapp.ui.data.model.Recipes" />
+    </data>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="4dp">
+
+        <EditText
+            android:id="@+id/edit_text_item"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Inserisci..."
+            android:textSize="20sp" />
+
+        <ImageButton
+            android:id="@+id/btn_remove"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_delete"
+            app:tint="@color/rosso_salmone"
+            android:contentDescription="Elimina riga"/>
+
+    </LinearLayout>
+</layout>
