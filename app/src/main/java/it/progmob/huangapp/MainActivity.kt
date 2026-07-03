@@ -18,7 +18,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.firestore
 import it.progmob.huangapp.databinding.ActivityMainBinding
 import it.progmob.huangapp.ui.WelcomeActivity
 import it.progmob.huangapp.viewmodel.HomeViewModel
@@ -32,10 +34,19 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            // In MainActivity.kt, dentro il task del token:
             if (task.isSuccessful) {
-                android.util.Log.d("FCM_TOKEN", "Token: ${task.result}")
+                val token = task.result
+                val userId = FirebaseAuth.getInstance().currentUser?.uid
+                if (userId != null) {
+                    val tokenData = mapOf("fcmToken" to token)
+                    Firebase.firestore.collection("users").document(userId)
+                        .set(tokenData, com.google.firebase.firestore.SetOptions.merge())
+                }
             }
         }
+
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -110,20 +121,12 @@ class MainActivity : AppCompatActivity() {
                 0
             )
         }
-
-
-        val recName = intent.getStringExtra("recipeName")
-        val recID = intent.getStringExtra("recipeId")
-        val username = intent.getStringExtra("username")
-
-        if (recName != null && recID != null) {
-            val bundle = Bundle().apply{
-                putString("recipeName", recName)
-                putString("recipeID", recID)
-                putString("username", username)
-            }
-            navController.navigate(R.id.RecipeDetailFragment, bundle)
-        }
+        handleNotificationIntent(intent)
+    }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent) // Aggiorna l'intent dell'activity con quello della notifica
+        handleNotificationIntent(intent)
     }
 
     private fun createNotificationChannel() {
@@ -132,11 +135,34 @@ class MainActivity : AppCompatActivity() {
             val name = "Notification Channel"
             val descriptionText = "Channel for notifications"
             val importance = NotificationManager.IMPORTANCE_HIGH
-            val mChannel = NotificationChannel("CHANNEL_ID", name, importance)
+            val mChannel = NotificationChannel("CHANNEL_ID_V3", name, importance)
             mChannel.description = descriptionText
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as
                     NotificationManager
             notificationManager.createNotificationChannel(mChannel)
+        }
+    }
+    private fun handleNotificationIntent(intent: Intent) {
+        val recipeId = intent.getStringExtra("recipeId")
+        if (recipeId != null) {
+            // Recupera il valore 'goToComments' che può arrivare come String (da FCM) o Boolean (da Service)
+            val extras = intent.extras
+            val rawString = extras?.getString("goToComments")
+            val rawBoolean = extras?.getBoolean("goToComments", false) ?: false
+
+            val shouldScroll = if (rawString != null) {
+                rawString.toBoolean()
+            } else {
+                rawBoolean
+            }
+            val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host) as NavHostFragment
+            val navController = navHostFragment.navController
+
+            val bundle = Bundle().apply {
+                putString("recipeId", recipeId)
+                putBoolean("goToComments", shouldScroll)
+            }
+            navController.navigate(R.id.RecipeDetailFragment, bundle)
         }
     }
 

@@ -15,6 +15,8 @@ class NewRecipeViewModel : ViewModel() {
     val name = MutableLiveData("")
     val description = MutableLiveData("")
     val image = MutableLiveData("")
+    val category = MutableLiveData("")
+    val cooktime = MutableLiveData("")
     private val _errorMsg = MutableLiveData("")
     val errorMsg: LiveData<String> = _errorMsg
     val ingredients = MutableLiveData<MutableList<String>>(mutableListOf(""))
@@ -37,6 +39,8 @@ class NewRecipeViewModel : ViewModel() {
                     name.value = recipe.name
                     description.value = recipe.description
                     image.value = recipe.image
+                    category.value = recipe.category
+                    cooktime.value = recipe.cooktime
                     ingredients.value = recipe.ingredients.toMutableList()
                     steps.value = recipe.steps.toMutableList()
                 }
@@ -106,10 +110,12 @@ class NewRecipeViewModel : ViewModel() {
         val n = name.value ?: ""
         val d = description.value ?: ""
         val img = image.value ?: ""
+        val cat = category.value ?: ""
+        val time = cooktime.value ?: ""
         val ing = ingredients.value?.filter { it.isNotBlank() } ?: emptyList()
         val stp = steps.value?.filter { it.isNotBlank() } ?: emptyList()
 
-        if (n.isBlank() || d.isBlank() || img.isBlank() || ing.isEmpty() || stp.isEmpty()) {
+        if (n.isBlank() || d.isBlank() || img.isBlank() || cat.isBlank() || time.isBlank() || ing.isEmpty() || stp.isEmpty()) {
             _errorMsg.value = "Compila tutti i campi obbligatori"
             return
         }
@@ -133,6 +139,8 @@ class NewRecipeViewModel : ViewModel() {
                     name = n,
                     description = d,
                     image = img,
+                    category = cat,
+                    cooktime = time,
                     ingredients = ing,
                     steps = stp,
                     userID = user.uid,

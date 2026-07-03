@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".fragments.RecipeDetailFragment">
+
     <data>
+        <import type="android.view.View" />
         <variable
             name="recipeDetail"
             type="it.progmob.huangapp.ui.data.model.Recipes" />
@@ -14,194 +15,329 @@
     </data>
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/recipe_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true">
 
-        <LinearLayout
-            android:id="@+id/recipe_item"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="1dp">
+            android:layout_height="match_parent">
 
-            <ImageView
-                android:id="@+id/image"
-                android:layout_width="match_parent"
-                android:layout_height="250dp"
-                android:scaleType="centerCrop"
-                app:imageUrl="@{recipeDetail.image}"/>
-
-            <TextView
-                android:id="@+id/name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="12dp"
-                android:text="@{recipeDetail.name}"
-                android:textSize="25dp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:textColor="@color/black"/>
-
-            <TextView
-                android:id="@+id/description"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="12dp"
-                android:text="@{recipeDetail.description}"
-                android:textSize="18sp"
-                android:layout_marginTop="10dp"/>
-
-            <TextView
-                android:id="@+id/ingredientsTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="12dp"
-                android:text="Ingredienti"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:layout_marginTop="50dp"/>
-
-            <TextView
-                android:id="@+id/ingredients"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="12dp"
-                app:listaPuntata="@{recipeDetail.ingredients}"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/stepsTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="12dp"
-                android:text="Passaggi"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:layout_marginTop="50dp"/>
-
-            <TextView
-                android:id="@+id/steps"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="12dp"
-                android:layout_marginBottom="30dp"
-                app:listaNumerata="@{recipeDetail.steps}"
-                android:textSize="18sp" />
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                <TextView
-                android:id="@+id/text"
+            <ProgressBar
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="end"
-                android:padding="12dp"
-                android:text='@{"Pubblicata da: "+ recipeDetail.username}'
-                android:textSize="20sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:layout_gravity="center"
+                android:visibility="@{detailVM.isLoading ? View.VISIBLE : View.GONE}" />
 
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/userComment"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginTop="4dp"
-                    android:scaleType="centerCrop"
-                    app:imageProfileUrl="@{recipeDetail.userImage}"
-                    app:layout_constraintStart_toEndOf="@id/text"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
-
-                <ImageButton
-                    android:id="@+id/btn_delete"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/outline_delete_24"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:visibility="gone"
-                    app:layout_constraintEnd_toStartOf="@id/btn_edit"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:tint="@color/rosso_salmone"/>
-
-                <ImageButton
-                    android:id="@+id/btn_edit"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/outline_edit_24"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:visibility="gone"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:tint="@color/rosso_salmone" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="10dp"
-                android:background="@color/grey"/>
-            <TextView
+            <LinearLayout
+                android:id="@+id/recipe_item"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Commenti"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:padding="12dp"/>
+                android:orientation="vertical"
+                android:visibility="@{detailVM.isLoading ? View.GONE : View.VISIBLE}">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:layout_gravity="center_horizontal"
-                android:padding="5dp">
 
-                <EditText
-                    android:id="@id/edit_comment"
-                    android:layout_width="0dp"
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/image"
+                        android:layout_width="match_parent"
+                        android:layout_height="300dp"
+                        android:scaleType="centerCrop"
+                        app:imageUrl="@{recipeDetail.image}"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="120dp"
+                        android:background="@drawable/gradient_overlay"
+                        app:layout_constraintBottom_toBottomOf="@id/image" />
+
+                    <TextView
+                        android:id="@+id/name"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:text="@{recipeDetail.name}"
+                        android:textColor="@color/white"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        app:layout_constraintBottom_toBottomOf="@id/image" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <TextView
+                    android:id="@+id/description"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:layout_constraintWidth_percent="0.8"
-                    android:minHeight="48dp"
-                    android:layout_marginStart="10dp"
-                    android:padding="5dp"
-                    android:hint="Scrivi un commento"
-                    android:text="@={detailVM.commentText}"
-                    android:textSize="15sp"
-                    android:background="#F5F5F5"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
+                    android:paddingHorizontal="16dp"
+                    android:paddingTop="16dp"
+                    android:text="@{recipeDetail.description}"
+                    android:textColor="#666666"
+                    android:textSize="17sp"
+                    android:lineSpacingExtra="4dp"/>
 
-                <ImageButton
-                    android:id="@+id/btn_send_comment"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_marginStart="12dp"
-                    android:layout_marginTop="4dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    app:tint="@color/rosso_salmone"
-                    android:contentDescription="Invia commento"
-                    android:enabled="@{!detailVM.isSending}"
-                    android:alpha="@{detailVM.isSending ? 0.5f : 1.0f}"
-                    android:src="@android:drawable/ic_menu_send"
-                    app:layout_constraintStart_toEndOf="@+id/edit_comment"
-                    app:layout_constraintTop_toTopOf="@id/edit_comment"
-                    app:layout_constraintBottom_toBottomOf="@id/edit_comment"
-                    app:layout_constraintEnd_toEndOf="parent"/>
-            </androidx.constraintlayout.widget.ConstraintLayout>
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:backgroundTint="#f2e3dc"
+                    android:layout_margin="16dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="#EEEEEE"
+                    app:strokeWidth="1dp">
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/comments"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
-                tools:listitem="@layout/comment_row"/>
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
-        </LinearLayout>
+                        <!-- Tempo -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:visibility="@{recipeDetail.cooktime.empty ? View.GONE : View.VISIBLE}">
 
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:src="@drawable/ic_time"
+                                app:tint="@color/black" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:text='@{"Tempo: " + recipeDetail.cooktime + " min"}'
+                                android:textColor="@color/black"
+                                android:textSize="16sp" />
+                        </LinearLayout>
+
+                        <!-- Categoria -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:visibility="@{recipeDetail.category.empty ? View.GONE : View.VISIBLE}">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:src="@drawable/ic_category"
+                                app:tint="@color/black" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:text='@{"Categoria: " + recipeDetail.category}'
+                                android:textColor="@color/black"
+                                android:textSize="16sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:layout_marginBottom="24dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_ingredients"
+                            app:tint="@color/black" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Ingredienti"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/ingredients"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:paddingStart="12dp"
+                        android:textSize="17sp"
+                        android:textColor="#444444"
+                        app:listaPuntata="@{recipeDetail.ingredients}" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:layout_marginBottom="32dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_cooking"
+                            app:tint="@color/black" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Preparazione"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/steps"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:paddingStart="12dp"
+                        android:textSize="17sp"
+                        android:textColor="#444444"
+                        app:listaNumerata="@{recipeDetail.steps}" />
+                </LinearLayout>
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:padding="12dp">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/userComment"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:scaleType="centerCrop"
+                        app:imageProfileUrl="@{recipeDetail.userImage}"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+
+                    <TextView
+                        android:id="@+id/text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text='@{"Autore: "+ recipeDetail.username}'
+                        android:textSize="15sp"
+                        android:textColor="#333333"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/userComment"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <ImageButton
+                        android:id="@+id/btn_delete"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/outline_delete_24"
+                        android:visibility="gone"
+                        app:layout_constraintEnd_toStartOf="@id/btn_edit"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:tint="@color/rosso_salmone" />
+
+                    <ImageButton
+                        android:id="@+id/btn_edit"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/outline_edit_24"
+                        android:visibility="gone"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:tint="@color/rosso_salmone" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="32dp"
+                    android:background="#EEEEEE" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:text="Commenti"
+                    android:textSize="19sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/black" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="16dp"
+                    android:paddingBottom="16dp">
+
+                    <EditText
+                        android:id="@+id/edit_comment"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:hint="Scrivi un commento..."
+                        android:minHeight="48dp"
+                        android:padding="12dp"
+                        android:text="@={detailVM.commentText}"
+                        android:textSize="15sp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@+id/btn_send_comment"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <ImageButton
+                        android:id="@+id/btn_send_comment"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="8dp"
+                        android:alpha="@{detailVM.isSending ? 0.5f : 1.0f}"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:enabled="@{!detailVM.isSending}"
+                        android:src="@android:drawable/ic_menu_send"
+                        android:contentDescription="Invia commento"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="@color/rosso_salmone" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/comments"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:paddingBottom="32dp"
+                    tools:listitem="@layout/comment_row" />
+
+            </LinearLayout>
+        </FrameLayout>
     </androidx.core.widget.NestedScrollView>
 </layout>

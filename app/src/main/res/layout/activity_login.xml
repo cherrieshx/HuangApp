@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <data>
+        <import type="android.view.View"/>
         <variable name="vm" type="it.progmob.huangapp.viewmodel.LoginViewModel" />
     </data>
 
@@ -75,15 +76,31 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <!--Stringa di errore-->
+
+        <TextView
+            android:id="@+id/forgotPassword"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Hai dimenticato la password?"
+            android:textColor="@color/rosso_salmone"
+            android:textSize="16sp"
+            android:onClick = "@{() -> vm.forgotPassword()}"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.858"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/passwordLayout" />
+
         <TextView
             android:id="@+id/error"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:textColor="@color/rosso"
             android:textSize="14sp"
             android:layout_marginHorizontal="16dp"
-            android:visibility="gone"
-            app:layout_constraintTop_toBottomOf="@id/passwordLayout"
+            android:visibility="@{vm.error == null ? View.GONE : View.VISIBLE}"
+            app:layout_constraintTop_toBottomOf="@id/forgotPassword"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 

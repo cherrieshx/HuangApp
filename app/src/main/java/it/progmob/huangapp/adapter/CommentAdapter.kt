@@ -1,12 +1,19 @@
 package it.progmob.huangapp.adapter
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.auth.FirebaseAuth
 import it.progmob.huangapp.databinding.CommentRowBinding
 import it.progmob.huangapp.ui.data.model.Comment
 
-class CommentAdapter(private var list: List<Comment> = emptyList()) : RecyclerView.Adapter<CommentAdapter.CommentViewHolder>() {
+class CommentAdapter(
+    private var list: List<Comment> = emptyList(),
+    private val onDeleteComment: (Comment) -> Unit = {}
+) : RecyclerView.Adapter<CommentAdapter.CommentViewHolder>() {
+
+    private val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
     class CommentViewHolder(val binding: CommentRowBinding) :
         RecyclerView.ViewHolder(binding.root)
@@ -21,14 +28,25 @@ class CommentAdapter(private var list: List<Comment> = emptyList()) : RecyclerVi
     }
 
     override fun onBindViewHolder(holder: CommentViewHolder, position: Int) {
-        val commentItem = list[position] // Ottieni l'elemento corrente dalla lista
+        val commentItem = list[position]
         holder.binding.comment = commentItem
-        holder.binding.executePendingBindings() // Aggiorna i dati
+        
+        // Verifichiamo se l'utente loggato è l'autore del commento
+        val isAuthor = commentItem.userId == currentUserId
+        holder.binding.isAuthor = isAuthor
+
+        // Gestiamo il click sul tasto elimina (che aggiungeremo nel layout)
+        holder.binding.btnDelete.setOnClickListener {
+            onDeleteComment(commentItem)
+        }
+
+        holder.binding.executePendingBindings()
     }
 
     override fun getItemCount(): Int = list.size
+
     fun updateData(newList: List<Comment>) {
         list = newList
-        notifyDataSetChanged() // Notifica l'adapter che i dati sono cambiati
+        notifyDataSetChanged()
     }
 }

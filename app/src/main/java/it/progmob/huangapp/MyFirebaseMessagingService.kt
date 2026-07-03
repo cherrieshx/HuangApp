@@ -17,45 +17,56 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         if(remoteMessage.data.isNotEmpty()){
+            val recipeId = remoteMessage.data["recipeId"]
             val username = remoteMessage.data["username"] ?: "Qualcuno"
             val recipeName = remoteMessage.data["recipeName"] ?: "una ricetta"
-            val recipeId = remoteMessage.data["recipeId"]
             val title = "Nuovo commento"
-            val message ="$username ha commentato la tua ricetta: $recipeName"
+            val message = "$username ha commentato la tua ricetta: $recipeName"
 
-            sendNotification(title, message, recipeId, username, recipeName)
+            sendNotification(title, message, recipeId)
+        } 
+        else if (remoteMessage.notification != null) {
+            sendNotification(
+                remoteMessage.notification?.title,
+                remoteMessage.notification?.body,
+                null
+            )
         }
     }
 
-    private fun sendNotification(title: String?, messageBody: String?, recipeId: String?, username: String?, recipeName: String?) {
+    private fun sendNotification(title: String?, messageBody: String?, recipeId: String?) {
+        val timestampId = System.currentTimeMillis().toInt()
         val intent = Intent(this, MainActivity::class.java).apply {
             putExtra("recipeId", recipeId)
-            putExtra("recipeName", recipeName)
-            putExtra("username", username)
+            putExtra("goToComments", true)
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        
+
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            this, timestampId, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
-        val channelId = "CHANNEL_ID"
+        val channelId = "CHANNEL_ID_V3" // Cambiamo ID per forzare la creazione di un nuovo canale con alta priorità
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_recipes) 
             .setContentTitle(title)
             .setContentText(messageBody)
             .setAutoCancel(true)
             .setSound(defaultSoundUri)
+            .setPriority(NotificationCompat.PRIORITY_HIGH) // Per il pop-up
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setContentIntent(pendingIntent)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "Default Channel", NotificationManager.IMPORTANCE_HIGH)
+            val channel = NotificationChannel(channelId, "Notifications", NotificationManager.IMPORTANCE_HIGH)
             notificationManager.createNotificationChannel(channel)
         }
-        notificationManager.notify(0, notificationBuilder.build())
+        
+        notificationManager.notify(timestampId, notificationBuilder.build())
     }
 }

@@ -14,18 +14,26 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 class RecipeDetailViewModel : ViewModel() {
-
     private val db = Firebase.firestore
     private val auth = Firebase.auth
-    private val _recipe = MutableLiveData<Recipes>()
-    val recipe: LiveData<Recipes> = _recipe
+    private val _recipe = MutableLiveData<Recipes?>()
+    val recipe: LiveData<Recipes?> = _recipe
     private val _comments = MutableLiveData<List<Comment>>()
     val comments: LiveData<List<Comment>> = _comments
     val commentText = MutableLiveData("")
     private val _isSending = MutableLiveData(false)
+    private val _isLoading = MutableLiveData(false)
     val isSending: LiveData<Boolean> = _isSending
+    val isLoading: LiveData<Boolean> = _isLoading
 
     fun loadRecipeData(recipeId: String) {
+
+        //Pulisce i dati prima di ricaricare
+        _isLoading.value = true
+        _recipe.value = null
+        _comments.value = emptyList()
+
+        _isLoading.value = true
         viewModelScope.launch {
             try {
                 val document = db.collection("recipes").document(recipeId).get().await()
@@ -38,14 +46,20 @@ class RecipeDetailViewModel : ViewModel() {
                     username = userDoc.getString("username") ?: recipeData.username,
                     userImage = userDoc.getString("userImage") ?: recipeData.userImage
                 )
-            } catch (_: Exception) { }
+            } finally {
+                _isLoading.value = false
+            }
         }
 
         db.collection("recipes").document(recipeId).collection("comments")
             .orderBy("timestamp", Query.Direction.ASCENDING)
             .addSnapshotListener { snapshot, _ ->
                 if (snapshot != null) {
-                    val rawComments = snapshot.toObjects(Comment::class.java)
+                    val rawComments = snapshot.documents.mapNotNull { doc ->
+                        val comment = doc.toObject(Comment::class.java)
+                        comment?.id = doc.id // Salviamo l'ID del documento Firestore nel nostro oggetto Comment
+                        comment
+                    }
 
                     if (rawComments.isEmpty()) {
                         _comments.value = emptyList()
@@ -59,10 +73,13 @@ class RecipeDetailViewModel : ViewModel() {
                         db.collection("users").document(comment.userId).get()
                             .addOnCompleteListener { task ->
                                 processedCount++
-                                updatedComments.add(comment.copy(
+                                val updatedComment = comment.copy(
                                     username = if (task.isSuccessful) task.result.getString("username") ?: comment.username else comment.username,
                                     userImage = if (task.isSuccessful) task.result.getString("userImage") ?: comment.userImage else comment.userImage
-                                ))
+                                )
+                                updatedComment.id = comment.id
+                                updatedComments.add(updatedComment)
+
                                 if (processedCount == rawComments.size) {
                                     _comments.value = updatedComments.sortedBy { it.timestamp }
                                 }
@@ -108,5 +125,18 @@ class RecipeDetailViewModel : ViewModel() {
             .addOnFailureListener {
                 _isSending.value = false
             }
+    }
+
+    fun deleteComment(recipeId: String, commentId: String) {
+        viewModelScope.launch {
+            try {
+                db.collection("recipes").document(recipeId)
+                    .collection("comments").document(commentId)
+                    .delete().await()
+            } catch (e: Exception) {
+
+                e.printStackTrace()
+            }
+        }
     }
 }

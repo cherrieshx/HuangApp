@@ -40,8 +40,25 @@ class RecipeDetailFragment : Fragment() {
         // Recupera l'ID della ricetta passato dal HomeFragment
         val recipeId = arguments?.getString("recipeId") ?: return
 
+        val goToComments = arguments?.getBoolean("goToComments") ?: false
+        if (goToComments) {
+            binding.recipeScrollView.postDelayed({
+                // Calcola la posizione dei commenti e scrolla dolcemente
+                binding.recipeScrollView.smoothScrollTo(0, binding.comments.top + binding.recipeItem.top)
+            }, 1200)
+        }
         // Setup della RecyclerView per i commenti
-        commentAdapter = CommentAdapter()
+        commentAdapter = CommentAdapter(onDeleteComment = { commento ->
+            android.app.AlertDialog.Builder(requireContext())
+                .setTitle("Elimina commento")
+                .setMessage("Vuoi eliminare questo commento?")
+                .setPositiveButton("Elimina") { _, _ ->
+                    viewModel.deleteComment(recipeId, commento.id)
+                }
+                .setNegativeButton("Annulla", null)
+                .show()
+            }
+        )
         binding.comments.layoutManager = LinearLayoutManager(context)
         binding.comments.adapter = commentAdapter
 
@@ -52,14 +69,14 @@ class RecipeDetailFragment : Fragment() {
         viewModel.recipe.observe(viewLifecycleOwner) { ricetta ->
             binding.recipeDetail = ricetta
             val currentUid = FirebaseAuth.getInstance().currentUser?.uid
-            if (ricetta.userID == currentUid) {
+            if (ricetta?.userID == currentUid) {
                 // Mostra i bottoni di modifica e cancellazione se l'utente è l'autore
                 binding.btnEdit.visibility = View.VISIBLE
                 binding.btnDelete.visibility = View.VISIBLE
 
                 // Logica del bottone modifica ricetta
                 binding.btnEdit.setOnClickListener {
-                    val bundle = Bundle().apply { putString("recipeId", ricetta.id) }
+                    val bundle = Bundle().apply { putString("recipeId", ricetta?.id) }
                     findNavController().navigate(R.id.action_RecipeDetailFragment_to_NewRecipeFragment, bundle)
                 }
 
@@ -70,13 +87,13 @@ class RecipeDetailFragment : Fragment() {
                         .setTitle("Elimina ricetta")
                         .setMessage("Sei sicuro di voler eliminare questa ricetta?")
                         .setPositiveButton("Elimina") { _, _ ->
-                            Firebase.firestore.collection("recipes").document(ricetta.id).delete()
-                                .addOnSuccessListener {
-                                    Toast.makeText(context, "Ricetta eliminata", Toast.LENGTH_SHORT)
-                                        .show()
-                                    // Torna alla pagina principale
-                                    findNavController().navigate(R.id.action_RecipeDetailFragment_to_HomeFragment)
-                                }
+                            ricetta?.id?.let { id ->
+                                Firebase.firestore.collection("recipes").document(id).delete()
+                                    .addOnSuccessListener {
+                                        Toast.makeText(context, "Ricetta eliminata", Toast.LENGTH_SHORT).show()
+                                        findNavController().navigate(R.id.action_RecipeDetailFragment_to_HomeFragment)
+                                    }
+                            }
                         }
                         .setNegativeButton("Annulla", null)
                         .show()

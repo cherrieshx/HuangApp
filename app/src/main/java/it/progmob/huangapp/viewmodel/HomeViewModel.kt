@@ -12,62 +12,88 @@ import it.progmob.huangapp.ui.data.model.Recipes
 class HomeViewModel : ViewModel() {
     private val _recipesList = MutableLiveData<List<Recipes>>()
     val recipesList: LiveData<List<Recipes>> = _recipesList
-    var allRecipes = mutableListOf<Recipes>()
+
     private val _userRecipes = MutableLiveData<List<Recipes>>()
     val userRecipes: LiveData<List<Recipes>> = _userRecipes
+
     private val db = Firebase.firestore
+
+    // SORGENTE DATI UNICA
+    private var fullList = listOf<Recipes>()
+
+    // STATO CORRENTE
+    private var currentCategory = "Tutte"
+    private var currentQuery = ""
+    private var isAscending = true
 
     fun uploadDB() {
         db.collection("recipes")
             .addSnapshotListener { result, exception ->
                 if (exception != null) {
-                    Log.w("Firestore", "Errore nel caricamento dei dati", exception)
+                    Log.w("Firestore", "Errore nel caricamento", exception)
                     return@addSnapshotListener
                 }
 
                 if (result != null) {
-                    val list = mutableListOf<Recipes>()
-                    for (document in result) {
+                    val list = result.map { document ->
                         val recipe = document.toObject<Recipes>()
-                        // Assegniamo l'ID del documento Firestore all'oggetto
                         recipe.id = document.id
-                        list.add(recipe)
-                        Log.d("Firestore", "${document.id} => $recipe")
+                        recipe
                     }
-                    allRecipes = list
-                    _recipesList.postValue(list) // Aggiorna la lista di ricette
+                    fullList = list // Aggiorniamo la sorgente dati principale
+                    applyFilters()  // Applichiamo i filtri attivi sui nuovi dati
                 }
             }
     }
 
-    fun searchRecipes(query: String) {
-        //Se la query è vuota, mostriamo la lista completa originale
-        if (query.isEmpty()) {
-            _recipesList.postValue(allRecipes)
-            return
+    // Funzione unica per gestire Ricerca, Categoria e Tempo
+    fun applyFilters(
+        category: String = currentCategory,
+        query: String = currentQuery,
+        ascending: Boolean = isAscending
+    ) {
+        currentCategory = category
+        currentQuery = query
+        isAscending = ascending
+
+        // 1. FILTRAGGIO (Ricerca indipendente o Categoria)
+        val filtered = if (query.isNotEmpty()) {
+            // Se cerchi qualcosa, cerca ovunque (Ricerca Indipendente)
+            fullList.filter { it.name.contains(query, ignoreCase = true) }
+        } else {
+            // Se non cerchi, filtra per categoria
+            if (category == "Tutte") fullList
+            else fullList.filter { it.category == category }
         }
-        //Filtra le ricette in base alla query
-        val list = allRecipes.filter { recipe ->
-            recipe.name.contains(query, ignoreCase = true)
+
+        // 2. ORDINAMENTO (Sempre applicato)
+        val sorted = filtered.let { list ->
+            if (ascending) {
+                list.sortedBy { it.cooktime.toIntOrNull() ?: 0 }
+            } else {
+                list.sortedByDescending { it.cooktime.toIntOrNull() ?: 0 }
+            }
         }
-        _recipesList.postValue(list)
+
+        _recipesList.postValue(sorted)
     }
 
-    //Funzione per il profilo
+    // La ricerca in MainActivity deve chiamare questa
+    fun searchRecipes(query: String) {
+        applyFilters(query = query)
+    }
+
     fun loadUserRecipes(userId: String) {
         db.collection("recipes")
-            .whereEqualTo("userID", userId) // Filtra per ID utente
+            .whereEqualTo("userID", userId)
             .addSnapshotListener { result, e ->
                 if (e != null) return@addSnapshotListener
-
-                val list = mutableListOf<Recipes>()
-                result?.forEach { doc ->
+                val list = result?.map { doc ->
                     val recipe = doc.toObject<Recipes>()
                     recipe.id = doc.id
-                    list.add(recipe)
-                }
-                _userRecipes.postValue(list) // Aggiorna la lista di ricette dell'utente
+                    recipe
+                } ?: emptyList()
+                _userRecipes.postValue(list)
             }
     }
-
 }

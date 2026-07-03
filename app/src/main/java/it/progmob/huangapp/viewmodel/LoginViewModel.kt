@@ -16,6 +16,7 @@ class LoginViewModel : ViewModel() {
     private val _loginSuccess = MutableLiveData(false)
     val loginSuccess: LiveData<Boolean> = _loginSuccess
 
+
     fun login() {
         val em = email.value.orEmpty().trim() // Rimuove spazi bianchi inutili
         val pas = password.value.orEmpty()
@@ -37,6 +38,21 @@ class LoginViewModel : ViewModel() {
                     is FirebaseAuthInvalidCredentialsException -> "Password errata o email non valida"
                     else -> "Errore durante l'accesso: ${exception.localizedMessage}"
                 }
+            }
+    }
+
+    fun forgotPassword() {
+        val em = email.value.orEmpty().trim()
+        if (em.isBlank()) {
+            _error.value = "Inserisci l'email per recuperare la password e riclicca il link"
+            return
+        }
+        FirebaseAuth.getInstance().sendPasswordResetEmail(em)
+            .addOnSuccessListener {
+                _error.value = "Email di reset inviata con successo!"
+            }
+            .addOnFailureListener { exception ->
+                _error.value = "Errore: ${exception.localizedMessage}"
             }
     }
 }

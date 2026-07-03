@@ -9,16 +9,79 @@
             type="it.progmob.huangapp.viewmodel.HomeViewModel" />
     </data>
 
-    <FrameLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@color/white"
         tools:context=".fragments.HomeFragment">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp"
+            android:gravity="center_vertical"
+            android:background="@color/white"
+            android:weightSum="1">
+
+            <!-- Dropdown Categoria -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/menu_category"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.6"
+                app:boxStrokeColor="@color/grey"
+                app:boxStrokeWidth="1dp"
+                app:hintTextColor="@color/black"
+                android:hint="Categoria">
+
+                <AutoCompleteTextView
+                    android:id="@+id/auto_complete_category"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    android:minHeight="48dp"
+                    android:paddingVertical="12dp"
+                    android:textSize="14sp"
+                    tools:ignore="LabelFor,DuplicateClickableViewCheck,SpeakableTextPresentCheck" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+
+            <!-- Bottone Tempo (Affiancato) -->
+            <Button
+                android:id="@+id/btn_sort_time"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.4"
+                android:layout_marginStart="8dp"
+                android:text="Tempo"
+                android:textColor="@color/black"
+                android:textSize="13sp"
+                app:icon="@drawable/ic_time"
+                app:iconTint="@color/black"
+                app:iconSize="30dp"
+                android:textAllCaps="false" />
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#EEEEEE" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv"
-            android:scrollbars="vertical"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:scrollbars="vertical"
+            android:paddingHorizontal="8dp"
+            android:clipToPadding="false" />
 
-    </FrameLayout>
+    </LinearLayout>
 </layout>

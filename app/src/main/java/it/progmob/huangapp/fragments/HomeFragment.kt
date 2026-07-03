@@ -22,6 +22,7 @@ class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
@@ -62,6 +63,30 @@ class HomeFragment : Fragment() {
             if (listaDB != null) {
                 adapter.updateData(listaDB)
             }
+        }
+        // 1. Configurazione Dropdown Categoria (Menu a comparsa)
+        val categories = arrayOf("Tutte", "Antipasto", "Primo", "Secondo", "Contorno", "Dolce")
+        val adapterCategory = android.widget.ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_list_item_1,
+            categories
+        )
+        binding.autoCompleteCategory.setAdapter(adapterCategory)
+
+        // Imposta "Tutte" come valore predefinito senza attivare il filtro
+        binding.autoCompleteCategory.setText(categories[0], false)
+
+        // Listener per il cambio di categoria
+        binding.autoCompleteCategory.setOnItemClickListener { _, _, position, _ ->
+            val selectedCategory = categories[position]
+            HomeVM.applyFilters(category = selectedCategory)
+        }
+
+        var tempoCrescente = true
+        binding.btnSortTime.setOnClickListener {
+            tempoCrescente = !tempoCrescente
+            binding.btnSortTime.text = if (tempoCrescente) "Tempo: Crescente" else "Tempo: Decrescente"
+            HomeVM.applyFilters(ascending = tempoCrescente)
         }
 
         HomeVM.uploadDB()

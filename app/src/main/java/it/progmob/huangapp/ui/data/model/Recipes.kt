@@ -8,7 +8,8 @@ data class Recipes (
     val description: String = "",
     val ingredients: List<String> = emptyList(),
     val steps: List<String> = emptyList(),
-
+    val cooktime: String = "",
+    val category: String = "",
     val userID: String = "",
     val username: String = "",
     val userImage: String = "",

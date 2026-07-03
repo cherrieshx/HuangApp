@@ -4,15 +4,20 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
+        <import type="android.view.View"/>
         <variable
             name="comment"
             type="it.progmob.huangapp.ui.data.model.Comment" />
+        <variable
+            name="isAuthor"
+            type="Boolean" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp">
+        android:padding="12dp"
+        android:layout_marginTop="10dp">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/userComment"
@@ -32,7 +37,7 @@
             android:text="@{comment.username}"
             android:textStyle="bold"
             android:textSize="14sp"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btn_delete"
             app:layout_constraintStart_toEndOf="@id/userComment"
             app:layout_constraintTop_toTopOf="@id/userComment"
             tools:text="Username"/>
@@ -44,10 +49,23 @@
             android:layout_marginTop="4dp"
             android:text="@{comment.text}"
             android:textSize="14sp"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btn_delete"
             app:layout_constraintStart_toStartOf="@id/commentUsername"
             app:layout_constraintTop_toBottomOf="@id/commentUsername"
             tools:text="Questo è un commento di prova."/>
+
+        <ImageButton
+            android:id="@+id/btn_delete"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/outline_delete_24"
+            app:tint="@color/rosso_salmone"
+            android:visibility="@{isAuthor ? View.VISIBLE : View.GONE}"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:contentDescription="Elimina commento" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

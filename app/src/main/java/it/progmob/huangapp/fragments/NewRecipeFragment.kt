@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
@@ -54,6 +56,33 @@ class NewRecipeFragment : Fragment() {
         binding.btnEditImage.setOnClickListener {
             pickImageLauncher.launch("image/*")
         }
+
+        //Configurazione selezione per la categoria
+        val categorie = arrayOf("Seleziona categoria", "Antipasto", "Primo", "Secondo", "Contorno", "Dolce", "Snack")
+        val adapter =
+            ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, categorie)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerCategory.adapter = adapter
+
+        binding.spinnerCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (position > 0) {
+                    viewModel.category.value = categorie[position]
+                } else {
+                    viewModel.category.value = "" // Ritorna vuoto se seleziona l'istruzione
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        // Se stiamo modificando una ricetta, impostiamo lo spinner sul valore corretto
+        viewModel.category.observe(viewLifecycleOwner) { currentCat ->
+            val index = categorie.indexOf(currentCat)
+            if (index >= 0) {
+                binding.spinnerCategory.setSelection(index)
+            }
+        }
+
 
         // Configurazione per ingredienti
         val ingAdapter = FormListAdapter(
