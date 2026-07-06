@@ -12,7 +12,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.firestore
 import it.progmob.huangapp.MainActivity
 import it.progmob.huangapp.R
 import it.progmob.huangapp.adapter.MyAdapter
@@ -51,6 +53,8 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
         //Carica dati utente
         profileVM.loadUserProfile()
 
@@ -72,22 +76,46 @@ class ProfileFragment : Fragment() {
         }
         binding.userRecipes.adapter = adapter
 
-        // Osserva ricette personali dell'utente
-        homeVM.userRecipes.observe(viewLifecycleOwner) { mieRicette ->
-            if (mieRicette != null) {
-                adapter.updateData(mieRicette)
-                if (mieRicette.isEmpty()) {
-                    binding.myRecipesTitle.visibility = View.GONE
-                } else {
-                    binding.myRecipesTitle.visibility = View.VISIBLE
-                }
+
+        homeVM.loadUserRecipes(userId)
+        homeVM.loadFavorites(userId)
+        homeVM.userRecipes.observe(viewLifecycleOwner) { listaMieRicette ->
+            // Aggiorna solo se il tab selezionato è "Le mie Ricette" (indice 0)
+            if (binding.tabLayoutProfile.selectedTabPosition == 0) {
+                adapter.updateData(listaMieRicette)
+                updateEmptyState(listaMieRicette.isEmpty(), isFavorites = false)
             }
         }
 
-        // Carica ricette dell'utente attuale
-        FirebaseAuth.getInstance().currentUser?.uid?.let { uid ->
-            homeVM.loadUserRecipes(uid)
+        homeVM.favorites.observe(viewLifecycleOwner) { listaPreferiti ->
+            // Aggiorna solo se il tab selezionato è "Preferiti" (indice 1)
+            if (binding.tabLayoutProfile.selectedTabPosition == 1) {
+                adapter.updateData(listaPreferiti)
+                updateEmptyState(listaPreferiti.isEmpty(), isFavorites = true)
+            }
         }
+
+        binding.tabLayoutProfile.addOnTabSelectedListener(object : com.google.android.material.tabs.TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: com.google.android.material.tabs.TabLayout.Tab?) {
+                when (tab?.position) {
+                    0 -> {
+                        // Switch a Mie Ricette
+                        val mie = homeVM.userRecipes.value ?: emptyList()
+                        adapter.updateData(mie)
+                        updateEmptyState(mie.isEmpty(), isFavorites = false)
+                    }
+                    1 -> {
+                        // Switch a Preferiti
+                        val favs = homeVM.favorites.value ?: emptyList()
+                        adapter.updateData(favs)
+                        updateEmptyState(favs.isEmpty(), isFavorites = true)
+                    }
+                }
+            }
+            override fun onTabUnselected(tab: com.google.android.material.tabs.TabLayout.Tab?) {}
+            override fun onTabReselected(tab: com.google.android.material.tabs.TabLayout.Tab?) {}
+        })
+
 
         binding.changeImage.setOnClickListener {
             pickImageLauncher.launch("image/*")
@@ -99,15 +127,42 @@ class ProfileFragment : Fragment() {
 
         // Logica per il bottone di logout, dopo il logout torna alla pagina principale
         binding.signOut.setOnClickListener {
-            FirebaseAuth.getInstance().signOut()
-            val intent = Intent(requireContext(), MainActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
+            val userId = FirebaseAuth.getInstance().currentUser?.uid
+            if (userId != null) {
+                // Rimuove il token dal DB prima di uscire
+                Firebase.firestore.collection("users").document(userId)
+                    .update("fcmToken", null)
+                    .addOnCompleteListener {
+                        FirebaseAuth.getInstance().signOut()
+                        val intent = Intent(requireContext(), MainActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        startActivity(intent)
+                    }
+            } else {
+                FirebaseAuth.getInstance().signOut()
+                val intent = Intent(requireContext(), MainActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+            }
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+    private fun updateEmptyState(isEmpty: Boolean, isFavorites: Boolean) {
+        if (isFavorites) {
+            // Siamo nel tab Preferiti
+            binding.emptyFavorites.visibility = if (isEmpty) View.VISIBLE else View.GONE
+            binding.emptyMyRecipes.visibility = View.GONE
+        } else {
+            // Siamo nel tab Mie Ricette
+            binding.emptyMyRecipes.visibility = if (isEmpty) View.VISIBLE else View.GONE
+            binding.emptyFavorites.visibility = View.GONE
+        }
+
+        // Nascondi la lista se è vuota per far vedere bene il messaggio
+        binding.userRecipes.visibility = if (isEmpty) View.GONE else View.VISIBLE
     }
 }

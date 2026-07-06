@@ -2,6 +2,7 @@ package it.progmob.huangapp.fragments
 
 
 import android.os.Bundle
+import android.widget.Filter
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -52,7 +53,7 @@ class HomeFragment : Fragment() {
             bundle.putString("recipeId", ricettaCliccata.id)
             bundle.putString("recipeName", ricettaCliccata.name)
 
-            // Esegui la navigazione al dettaglio della ricetta
+            // Esegue la navigazione al dettaglio della ricetta
             findNavController().navigate(
                 R.id.action_HomeFragment_to_RecipeDetailFragment,
                 bundle
@@ -64,32 +65,44 @@ class HomeFragment : Fragment() {
                 adapter.updateData(listaDB)
             }
         }
-        // 1. Configurazione Dropdown Categoria (Menu a comparsa)
         val categories = arrayOf("Tutte", "Antipasto", "Primo", "Secondo", "Contorno", "Dolce")
-        val adapterCategory = android.widget.ArrayAdapter(
+
+        //Sovrascrive il metodo getFilter per avere sempre la stessa lista di categorie
+        val adapterCategory = object : android.widget.ArrayAdapter<String>(
             requireContext(),
             android.R.layout.simple_list_item_1,
             categories
-        )
+        ) {
+            override fun getFilter(): android.widget.Filter {
+                return object : android.widget.Filter() {
+                    override fun performFiltering(constraint: CharSequence?) = FilterResults().apply {
+                        values = categories
+                        count = categories.size
+                    }
+                    override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
+                        notifyDataSetChanged()
+                    }
+                }
+            }
+        }
         binding.autoCompleteCategory.setAdapter(adapterCategory)
-
-        // Imposta "Tutte" come valore predefinito senza attivare il filtro
-        binding.autoCompleteCategory.setText(categories[0], false)
+        binding.autoCompleteCategory.setText(HomeVM.currentCategory, false)
 
         // Listener per il cambio di categoria
-        binding.autoCompleteCategory.setOnItemClickListener { _, _, position, _ ->
-            val selectedCategory = categories[position]
+        binding.autoCompleteCategory.setOnItemClickListener { parent, _, position, _ ->
+            val selectedCategory = parent.getItemAtPosition(position).toString()
             HomeVM.applyFilters(category = selectedCategory)
         }
 
-        var tempoCrescente = true
+        var tempoCrescente = HomeVM.isAscending
+        binding.btnSortTime.text = if (tempoCrescente) "Tempo: Crescente" else "Tempo: Decrescente"
         binding.btnSortTime.setOnClickListener {
             tempoCrescente = !tempoCrescente
             binding.btnSortTime.text = if (tempoCrescente) "Tempo: Crescente" else "Tempo: Decrescente"
             HomeVM.applyFilters(ascending = tempoCrescente)
         }
 
-        HomeVM.uploadDB()
+        HomeVM.initOrRefresh()
     }
     override fun onDestroyView() {
         super.onDestroyView()

@@ -20,6 +20,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val recipeId = remoteMessage.data["recipeId"]
             val username = remoteMessage.data["username"] ?: "Qualcuno"
             val recipeName = remoteMessage.data["recipeName"] ?: "una ricetta"
+            val category = remoteMessage.data["category"] ?: "categoria"
             val title = "Nuovo commento"
             val message = "$username ha commentato la tua ricetta: $recipeName"
 

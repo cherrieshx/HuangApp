@@ -18,6 +18,11 @@ import it.progmob.huangapp.adapter.CommentAdapter
 import it.progmob.huangapp.databinding.FragmentRecipeDetailBinding
 import it.progmob.huangapp.ui.WelcomeActivity
 import it.progmob.huangapp.viewmodel.RecipeDetailViewModel
+import android.graphics.Color
+import androidx.core.text.color
+import com.airbnb.lottie.LottieProperty
+import com.airbnb.lottie.model.KeyPath
+import com.airbnb.lottie.value.LottieValueCallback
 
 class RecipeDetailFragment : Fragment() {
     private val viewModel: RecipeDetailViewModel by activityViewModels()
@@ -73,6 +78,7 @@ class RecipeDetailFragment : Fragment() {
                 // Mostra i bottoni di modifica e cancellazione se l'utente è l'autore
                 binding.btnEdit.visibility = View.VISIBLE
                 binding.btnDelete.visibility = View.VISIBLE
+                binding.btnFavorite.visibility = View.GONE
 
                 // Logica del bottone modifica ricetta
                 binding.btnEdit.setOnClickListener {
@@ -101,6 +107,40 @@ class RecipeDetailFragment : Fragment() {
             }
         }
 
+        viewModel.checkIfFavorite(recipeId)
+
+        viewModel.isFavorite.observe(viewLifecycleOwner) { isFav ->
+            // Imposta il frame iniziale dell'animazione
+            if (isFav) {
+                setLottieColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.rosso_salmone))
+                binding.btnFavorite.progress = 0.5f
+            } else {
+                setLottieColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.rosso_salmone))
+                binding.btnFavorite.progress = 0.0f
+            }
+        }
+
+        binding.btnFavorite.setOnClickListener {
+            val currentlyFavorite = viewModel.isFavorite.value ?: false
+
+            if (currentlyFavorite) {
+                // Animazione per "Togliere"
+                binding.btnFavorite.setMinAndMaxFrame(0, 10)
+                binding.btnFavorite.speed = -2f // Gira l'animazione al contrario
+                binding.btnFavorite.playAnimation()
+
+            } else {
+                // Animazione per "Aggiungere"
+                binding.btnFavorite.setMinAndMaxFrame(0, 10)
+                binding.btnFavorite.speed = 2f
+                binding.btnFavorite.playAnimation()
+
+            }
+
+            viewModel.saveFavorite(recipeId)
+        }
+
+
         // Aggiorna la lista dei commenti quando ne arrivano di nuovi
         viewModel.comments.observe(viewLifecycleOwner) { listaCommenti ->
             commentAdapter.updateData(listaCommenti)
@@ -125,5 +165,13 @@ class RecipeDetailFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    private fun setLottieColor(color: Int) {
+        binding.btnFavorite.addValueCallback(
+            KeyPath("**"), // Il simbolo "**" indica di applicare il colore a tutti i livelli del JSON
+            LottieProperty.COLOR_FILTER,
+            LottieValueCallback(android.graphics.PorterDuffColorFilter(color, android.graphics.PorterDuff.Mode.SRC_ATOP))
+        )
     }
 }

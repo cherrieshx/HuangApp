@@ -23,11 +23,13 @@
             android:id="@+id/userComment"
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="4dp"
             android:scaleType="centerCrop"
             app:imageProfileUrl="@{comment.userImage}"
-            app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
 
         <TextView
             android:id="@+id/commentUsername"
@@ -59,7 +61,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/outline_delete_24"
+            android:src="@drawable/ic_delete"
             app:tint="@color/rosso_salmone"
             android:visibility="@{isAuthor ? View.VISIBLE : View.GONE}"
             app:layout_constraintEnd_toEndOf="parent"

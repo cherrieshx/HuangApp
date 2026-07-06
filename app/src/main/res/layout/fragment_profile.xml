@@ -138,15 +138,42 @@
                     android:textSize="16sp" />
             </com.google.android.material.card.MaterialCardView>
 
-            <TextView
-                android:id="@+id/myRecipesTitle"
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tab_layout_profile"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="30dp"
-                android:text="Le tue ricette"
-                android:textSize="22sp"
-                android:textStyle="bold"
+                android:background="@color/white"
+                app:tabIndicatorColor="@color/rosso_salmone"
+                app:tabSelectedTextColor="@color/rosso_salmone"
+                app:tabTextColor="@color/black">
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Le mie ricette" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Preferiti" />
+
+            </com.google.android.material.tabs.TabLayout>
+            <TextView
+                android:id="@+id/emptyMyRecipes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Non hai ancora creato nessuna ricetta."
+                android:gravity="center"
+                android:padding="20dp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/emptyFavorites"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Non hai ancora salvato nessuna ricetta nei preferiti."
+                android:gravity="center"
+                android:padding="20dp"
                 android:visibility="gone" />
 
             <androidx.recyclerview.widget.RecyclerView

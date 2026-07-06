@@ -111,6 +111,15 @@ class MainActivity : AppCompatActivity() {
                 binding.toolbar.visibility = View.GONE
                 binding.toolbarDetail.visibility = View.VISIBLE
             }
+            when (destination.id) {
+                R.id.RecipeDetailFragment -> {
+                    binding.bottomNav.visibility = View.GONE
+                }
+                else -> {
+                    // Mostra la navbar in Home, Profilo e Nuova Ricetta
+                    binding.bottomNav.visibility = View.VISIBLE
+                }
+            }
         }
 
         createNotificationChannel()

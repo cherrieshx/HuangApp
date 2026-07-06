@@ -8,6 +8,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import it.progmob.huangapp.ui.data.model.Recipes
+import com.google.firebase.firestore.toObject
 
 
 class ProfileViewModel : ViewModel() {
@@ -90,4 +91,5 @@ class ProfileViewModel : ViewModel() {
             }
             .addOnFailureListener { onComplete() }
     }
+
 }

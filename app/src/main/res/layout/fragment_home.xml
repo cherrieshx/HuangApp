@@ -13,7 +13,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="@color/white"
         tools:context=".fragments.HomeFragment">
 
         <LinearLayout
@@ -26,7 +25,6 @@
             android:background="@color/white"
             android:weightSum="1">
 
-            <!-- Dropdown Categoria -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/menu_category"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
@@ -50,8 +48,6 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
-
-            <!-- Bottone Tempo (Affiancato) -->
             <Button
                 android:id="@+id/btn_sort_time"
                 style="@style/Widget.MaterialComponents.Button.TextButton"

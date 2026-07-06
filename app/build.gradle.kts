@@ -85,4 +85,5 @@ dependencies {
     implementation("com.google.firebase:firebase-storage")
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-inappmessaging-display")
+    implementation("com.airbnb.android:lottie:6.4.0")
 }

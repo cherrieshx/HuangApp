@@ -228,10 +228,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="16dp"
-                    android:padding="12dp">
+                    android:paddingVertical="8dp">
 
                     <com.google.android.material.imageview.ShapeableImageView
-                        android:id="@+id/userComment"
+                        android:id="@+id/authorImage"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:scaleType="centerCrop"
@@ -243,40 +243,65 @@
 
                     <TextView
                         android:id="@+id/text"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
-                        android:text='@{"Autore: "+ recipeDetail.username}'
+                        android:text='@{"Pubblicata da: "+ recipeDetail.username}'
                         android:textSize="15sp"
                         android:textColor="#333333"
                         app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/userComment"
+                        app:layout_constraintEnd_toStartOf="@+id/btn_favorite"
+                        app:layout_constraintStart_toEndOf="@id/authorImage"
                         app:layout_constraintTop_toTopOf="parent" />
 
-                    <ImageButton
-                        android:id="@+id/btn_delete"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:src="@drawable/outline_delete_24"
-                        android:visibility="gone"
-                        app:layout_constraintEnd_toStartOf="@id/btn_edit"
+                    <com.airbnb.lottie.LottieAnimationView
+                        android:id="@+id/btn_favorite"
+                        android:layout_width="45dp"
+                        android:layout_height="45dp"
+                        app:lottie_fileName="ic_yesfavorites.json"
+                        app:lottie_loop="false"
+                        app:lottie_autoPlay="false"
+                        android:padding="8dp"
+                        app:tint="@color/rosso_salmone"
+                        app:layout_constraintStart_toEndOf="@id/text"
+                        app:layout_constraintEnd_toStartOf="@+id/btn_edit"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent"
-                        app:tint="@color/rosso_salmone" />
+                        android:contentDescription="Gestisci preferiti" />
 
                     <ImageButton
                         android:id="@+id/btn_edit"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
-                        android:src="@drawable/outline_edit_24"
+                        android:src="@drawable/ic_edit"
                         android:visibility="gone"
-                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintEnd_toStartOf="@+id/btn_delete"
+                        app:layout_constraintStart_toEndOf="@id/btn_favorite"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:tint="@color/rosso_salmone" />
+
+                    <ImageButton
+                        android:id="@+id/btn_delete"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_delete"
+                        android:visibility="gone"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/btn_edit"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:tint="@color/rosso_salmone" />
+
                 </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="16dp"
+                    android:background="#EEEEEE" />
 
                 <View
                     android:layout_width="match_parent"

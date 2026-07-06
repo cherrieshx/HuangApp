@@ -15,18 +15,25 @@ class HomeViewModel : ViewModel() {
 
     private val _userRecipes = MutableLiveData<List<Recipes>>()
     val userRecipes: LiveData<List<Recipes>> = _userRecipes
+    private val _favorites = MutableLiveData<List<Recipes>>()
+    val favorites: LiveData<List<Recipes>> = _favorites
 
     private val db = Firebase.firestore
 
-    // SORGENTE DATI UNICA
     private var fullList = listOf<Recipes>()
+    private var isListenerRegistered = false
 
-    // STATO CORRENTE
-    private var currentCategory = "Tutte"
+    var currentCategory = "Tutte"
+        private set
     private var currentQuery = ""
-    private var isAscending = true
+    var isAscending = true
+        private set
 
     fun uploadDB() {
+        // Evita di registrare listener multipli ad ogni ritorno sul fragment
+        if (isListenerRegistered) return
+        isListenerRegistered = true
+
         db.collection("recipes")
             .addSnapshotListener { result, exception ->
                 if (exception != null) {
@@ -40,10 +47,21 @@ class HomeViewModel : ViewModel() {
                         recipe.id = document.id
                         recipe
                     }
-                    fullList = list // Aggiorniamo la sorgente dati principale
-                    applyFilters()  // Applichiamo i filtri attivi sui nuovi dati
+                    fullList = list
+                    applyFilters()
                 }
             }
+    }
+
+    // Chiamato ad ogni onViewCreated: se i dati sono già in memoria riapplica i filtri subito,
+    // altrimenti registra il listener Firestore per la prima volta
+    fun initOrRefresh() {
+        if (isListenerRegistered) {
+            // Dati già presenti, riapplica filtri correnti per aggiornare la UI
+            applyFilters()
+        } else {
+            uploadDB()
+        }
     }
 
     // Funzione unica per gestire Ricerca, Categoria e Tempo
@@ -56,17 +74,15 @@ class HomeViewModel : ViewModel() {
         currentQuery = query
         isAscending = ascending
 
-        // 1. FILTRAGGIO (Ricerca indipendente o Categoria)
         val filtered = if (query.isNotEmpty()) {
-            // Se cerchi qualcosa, cerca ovunque (Ricerca Indipendente)
+            // Ricerca indipendentemente dalla categoria
             fullList.filter { it.name.contains(query, ignoreCase = true) }
         } else {
-            // Se non cerchi, filtra per categoria
             if (category == "Tutte") fullList
             else fullList.filter { it.category == category }
         }
 
-        // 2. ORDINAMENTO (Sempre applicato)
+        // Ordinamento sempre per cookitime
         val sorted = filtered.let { list ->
             if (ascending) {
                 list.sortedBy { it.cooktime.toIntOrNull() ?: 0 }
@@ -78,7 +94,6 @@ class HomeViewModel : ViewModel() {
         _recipesList.postValue(sorted)
     }
 
-    // La ricerca in MainActivity deve chiamare questa
     fun searchRecipes(query: String) {
         applyFilters(query = query)
     }
@@ -94,6 +109,33 @@ class HomeViewModel : ViewModel() {
                     recipe
                 } ?: emptyList()
                 _userRecipes.postValue(list)
+            }
+    }
+    fun loadFavorites(userId: String) {
+        db.collection("users").document(userId).collection("favorites")
+            .addSnapshotListener { snapshot,e ->
+                if (e != null) {
+                    Log.e("FAV", "Errore listener preferiti: ${e.message}")
+                    return@addSnapshotListener
+                }
+
+                val favoriteIds = snapshot?.documents?.map { it.id } ?: emptyList()
+                if (favoriteIds.isEmpty()) {
+                    _favorites.postValue(emptyList())
+                    return@addSnapshotListener
+                }
+                // Recupera i dettagli di ogni ricetta preferita
+                db.collection("recipes")
+                    .whereIn(com.google.firebase.firestore.FieldPath.documentId(), favoriteIds)
+                    .get()
+                    .addOnSuccessListener { result ->
+                        val recipes = result.map { doc ->
+                            val recipe = doc.toObject<Recipes>()
+                            recipe.id = doc.id
+                            recipe
+                        }
+                        _favorites.postValue(recipes)
+                    }
             }
     }
 }

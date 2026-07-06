@@ -1,5 +1,6 @@
 package it.progmob.huangapp.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -25,6 +26,8 @@ class RecipeDetailViewModel : ViewModel() {
     private val _isLoading = MutableLiveData(false)
     val isSending: LiveData<Boolean> = _isSending
     val isLoading: LiveData<Boolean> = _isLoading
+    private val _isFavorite = MutableLiveData<Boolean>(false)
+    val isFavorite: LiveData<Boolean> = _isFavorite
 
     fun loadRecipeData(recipeId: String) {
 
@@ -32,6 +35,7 @@ class RecipeDetailViewModel : ViewModel() {
         _isLoading.value = true
         _recipe.value = null
         _comments.value = emptyList()
+        _isFavorite.value = false
 
         _isLoading.value = true
         viewModelScope.launch {
@@ -89,6 +93,30 @@ class RecipeDetailViewModel : ViewModel() {
             }
     }
 
+    fun checkIfFavorite(recipeId: String) {
+        val user = auth.currentUser ?: return
+        db.collection("users").document(user.uid).collection("favorites")
+            .document(recipeId).get()
+            .addOnSuccessListener { document -> _isFavorite.value = document.exists()
+            }
+    }
+
+
+    fun saveFavorite(recipeId: String) {
+        val user = auth.currentUser ?: return
+        val docRef = db.collection("users").document(user.uid).collection("favorites").document(recipeId)
+
+        if (_isFavorite.value == true) {
+            docRef.delete()
+                .addOnSuccessListener { _isFavorite.value = false }
+                .addOnFailureListener { Log.e("FAV", "Errore rimozione: ${it.message}") }
+        } else {
+            val data = mapOf("timestamp" to System.currentTimeMillis())
+            docRef.set(data)
+                .addOnSuccessListener { _isFavorite.value = true }
+                .addOnFailureListener { Log.e("FAV", "Errore aggiunta: ${it.message}") }
+        }
+    }
     fun sendComment(recipeId: String, onComplete: () -> Unit) {
         if (_isSending.value == true) return // Se sta inviando esce
 
