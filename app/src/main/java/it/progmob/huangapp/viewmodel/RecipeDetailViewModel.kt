@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import it.progmob.huangapp.ui.data.model.Comment
@@ -117,6 +118,8 @@ class RecipeDetailViewModel : ViewModel() {
                 .addOnFailureListener { Log.e("FAV", "Errore aggiunta: ${it.message}") }
         }
     }
+
+
     fun sendComment(recipeId: String, onComplete: () -> Unit) {
         if (_isSending.value == true) return // Se sta inviando esce
 

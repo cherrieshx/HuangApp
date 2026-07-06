@@ -5,8 +5,10 @@ package it.progmob.huangapp.ui.data.model
  */
 data class LoggedInUser(
     val userId: String,
-    val username: String,
-    val image: String = "",
-    val favorites: List<String> = emptyList()
+    val username: String = "",
+    val userImage: String = "",
+    val favorites: List<String> = emptyList(),
+    val following: List<String> = emptyList(),
+    val followers: List<String> = emptyList()
 
 )

@@ -235,6 +235,8 @@
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:scaleType="centerCrop"
+                        android:clickable="true"
+                        android:focusable="true"
                         app:imageProfileUrl="@{recipeDetail.userImage}"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
@@ -249,9 +251,31 @@
                         android:text='@{"Pubblicata da: "+ recipeDetail.username}'
                         android:textSize="15sp"
                         android:textColor="#333333"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@+id/btn_follow"
+                        app:layout_constraintStart_toEndOf="@id/authorImage"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_follow"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="Segui"
+                        android:textSize="12sp"
+                        android:textColor="@color/rosso_salmone"
+                        app:strokeColor="@color/rosso_salmone"
+                        android:paddingHorizontal="8dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:visibility="gone"
+                        tools:visibility="visible"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toStartOf="@+id/btn_favorite"
-                        app:layout_constraintStart_toEndOf="@id/authorImage"
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <com.airbnb.lottie.LottieAnimationView
@@ -263,7 +287,6 @@
                         app:lottie_autoPlay="false"
                         android:padding="8dp"
                         app:tint="@color/rosso_salmone"
-                        app:layout_constraintStart_toEndOf="@id/text"
                         app:layout_constraintEnd_toStartOf="@+id/btn_edit"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent"
@@ -277,7 +300,6 @@
                         android:src="@drawable/ic_edit"
                         android:visibility="gone"
                         app:layout_constraintEnd_toStartOf="@+id/btn_delete"
-                        app:layout_constraintStart_toEndOf="@id/btn_favorite"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:tint="@color/rosso_salmone" />
@@ -290,7 +312,6 @@
                         android:src="@drawable/ic_delete"
                         android:visibility="gone"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/btn_edit"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:tint="@color/rosso_salmone" />

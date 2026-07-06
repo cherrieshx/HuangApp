@@ -9,6 +9,9 @@
             name="userInfo"
             type="it.progmob.huangapp.ui.data.model.Recipes" />
         <variable
+            name="followInfo"
+            type="it.progmob.huangapp.ui.data.model.LoggedInUser" />
+        <variable
             name="profileVM"
             type="it.progmob.huangapp.viewmodel.ProfileViewModel" />
     </data>
@@ -61,8 +64,77 @@
                     android:layout_gravity="center"
                     android:visibility="@{profileVM.isLoading ? View.VISIBLE : View.GONE}" />
             </FrameLayout>
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal"
+                android:layout_gravity="center_horizontal"
+                android:gravity="center_vertical" >
+                <LinearLayout
+                    android:id="@+id/layout_followers"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="?attr/selectableItemBackground"
+                    android:focusable="true"
+                    android:clickable="true">
+                    <TextView
+                        android:id="@+id/followersString"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="5dp"
+                        android:textStyle="bold"
+                        android:text="Followers" />
+                    <TextView
+                        android:id="@+id/followersSize"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text='@{String.valueOf(followInfo.followers.size())}'/>
+                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/layout_following"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="?attr/selectableItemBackground"
+                    android:focusable="true"
+                    android:clickable="true">
+                    <TextView
+                        android:id="@+id/followingString"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="5dp"
+                        android:textStyle="bold"
+                        android:text="Seguiti" />
+                    <TextView
+                        android:id="@+id/followingSize"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text='@{String.valueOf(followInfo.following.size())}'/>
+                </LinearLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_follow"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="10dp"
+                    android:text="Segui"
+                    android:textSize="12sp"
+                    android:textColor="@color/white"
+                    app:strokeColor="@color/rosso_salmone"
+                    android:paddingHorizontal="8dp"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:visibility="gone"
+                    tools:ignore="TouchTargetSizeCheck"
+                    tools:visibility="gone" />
 
+            </LinearLayout>
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_settings"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="16dp"
@@ -114,6 +186,7 @@
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_sign_out"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="16dp"
@@ -142,6 +215,7 @@
                 android:id="@+id/tab_layout_profile"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
                 android:background="@color/white"
                 app:tabIndicatorColor="@color/rosso_salmone"
                 app:tabSelectedTextColor="@color/rosso_salmone"

@@ -17,7 +17,9 @@ class HomeViewModel : ViewModel() {
     val userRecipes: LiveData<List<Recipes>> = _userRecipes
     private val _favorites = MutableLiveData<List<Recipes>>()
     val favorites: LiveData<List<Recipes>> = _favorites
-
+    private var followingIds = listOf<String>()
+    var isFollowActive = false
+        private set
     private val db = Firebase.firestore
 
     private var fullList = listOf<Recipes>()
@@ -53,6 +55,21 @@ class HomeViewModel : ViewModel() {
             }
     }
 
+    fun loadFollowingIds(myUid: String) {
+        db.collection("users").document(myUid)
+            .addSnapshotListener { doc, _ ->
+                if (doc != null && doc.exists()) {
+                    followingIds = (doc.get("following") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                    // Se il filtro è attivo, aggiorna la lista appena cambiano i seguiti
+                    if (isFollowActive) applyFilters()
+                }
+            }
+    }
+    fun toggleFollowingFilter(active: Boolean) {
+        isFollowActive = active
+        applyFilters()
+    }
+    
     // Chiamato ad ogni onViewCreated: se i dati sono già in memoria riapplica i filtri subito,
     // altrimenti registra il listener Firestore per la prima volta
     fun initOrRefresh() {
@@ -68,27 +85,36 @@ class HomeViewModel : ViewModel() {
     fun applyFilters(
         category: String = currentCategory,
         query: String = currentQuery,
-        ascending: Boolean = isAscending
+        ascending: Boolean = isAscending,
+        onlyFollowing: Boolean = isFollowActive
     ) {
         currentCategory = category
         currentQuery = query
         isAscending = ascending
+        isFollowActive = onlyFollowing
 
-        val filtered = if (query.isNotEmpty()) {
-            // Ricerca indipendentemente dalla categoria
-            fullList.filter { it.name.contains(query, ignoreCase = true) }
-        } else {
-            if (category == "Tutte") fullList
-            else fullList.filter { it.category == category }
+        var filtered = fullList
+
+        // 1. Filtro Seguiti
+        if (isFollowActive) {
+            filtered = filtered.filter { followingIds.contains(it.userID) }
         }
 
-        // Ordinamento sempre per cookitime
-        val sorted = filtered.let { list ->
-            if (ascending) {
-                list.sortedBy { it.cooktime.toIntOrNull() ?: 0 }
-            } else {
-                list.sortedByDescending { it.cooktime.toIntOrNull() ?: 0 }
-            }
+        // 2. Filtro Categoria
+        if (category != "Tutte") {
+            filtered = filtered.filter { it.category == category }
+        }
+
+        // 3. Ricerca Query
+        if (query.isNotEmpty()) {
+            filtered = filtered.filter { it.name.contains(query, ignoreCase = true) }
+        }
+
+        // 4. Ordinamento
+        val sorted = if (ascending) {
+            filtered.sortedBy { it.cooktime.toIntOrNull() ?: 0 }
+        } else {
+            filtered.sortedByDescending { it.cooktime.toIntOrNull() ?: 0 }
         }
 
         _recipesList.postValue(sorted)

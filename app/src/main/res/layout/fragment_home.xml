@@ -30,7 +30,7 @@
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.6"
+                android:layout_weight="0.5"
                 app:boxStrokeColor="@color/grey"
                 app:boxStrokeWidth="1dp"
                 app:hintTextColor="@color/black"
@@ -58,10 +58,20 @@
                 android:text="Tempo"
                 android:textColor="@color/black"
                 android:textSize="13sp"
-                app:icon="@drawable/ic_time"
                 app:iconTint="@color/black"
                 app:iconSize="30dp"
                 android:textAllCaps="false" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_following"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Seguiti"
+                app:chipIconVisible="true"
+                android:checkable="true"
+                app:chipBackgroundColor="@color/white"
+                app:checkedIconEnabled="false" />
 
         </LinearLayout>
 

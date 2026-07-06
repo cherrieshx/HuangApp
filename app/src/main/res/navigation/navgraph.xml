@@ -38,6 +38,9 @@
         <action
             android:id="@+id/action_RecipeDetailFragment_to_HomeFragment"
             app:destination="@id/ProfileFragment" />
+        <action
+            android:id="@+id/action_RecipeDetailFragment_to_ProfileFragment"
+            app:destination="@id/ProfileFragment" />
     </fragment>
 
     <fragment
@@ -46,12 +49,21 @@
         android:label="Profilo"
         tools:layout="@layout/fragment_profile" >
 
+        <argument
+            android:name="userId"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+
         <action
             android:id="@+id/action_ProfileFragment_to_RecipeDetailFragment"
             app:destination="@id/RecipeDetailFragment"/>
         <action
             android:id="@+id/action_ProfileFragment_to_ChangeUsernameFragment"
             app:destination="@id/ChangeUsernameFragment"/>
+        <action
+            android:id="@+id/action_ProfileFragment_to_ProfileListFragment"
+            app:destination="@id/ProfileListFragment" />
     </fragment>
 
     <fragment
@@ -75,4 +87,13 @@
         android:label="Cambia Username"
         tools:layout="@layout/fragment_change_username" />
 
+    <fragment
+        android:id="@+id/ProfileListFragment"
+        android:name="it.progmob.huangapp.fragments.ProfileListFragment"
+        android:label="Utenti"
+        tools:layout="@layout/profile_item_list">
+        <argument
+            android:name="title"
+            app:argType="string" />
+    </fragment>
 </navigation>

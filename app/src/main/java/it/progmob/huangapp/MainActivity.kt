@@ -86,7 +86,9 @@ class MainActivity : AppCompatActivity() {
                         startActivity(Intent(this, WelcomeActivity::class.java))
                         false
                     } else {
-                        navController.navigate(item.itemId)
+                        // Passiamo null come userId per indicare il proprio profilo
+                        val bundle = Bundle().apply { putString("userId", null) }
+                        navController.navigate(item.itemId, bundle)
                         true
                     }
                 }
@@ -103,7 +105,7 @@ class MainActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        navController.addOnDestinationChangedListener { _, destination, _ ->
+        navController.addOnDestinationChangedListener { _, destination, arguments ->
             if (destination.id == R.id.HomeFragment) {
                 binding.toolbar.visibility = View.VISIBLE
                 binding.toolbarDetail.visibility = View.GONE
@@ -111,12 +113,22 @@ class MainActivity : AppCompatActivity() {
                 binding.toolbar.visibility = View.GONE
                 binding.toolbarDetail.visibility = View.VISIBLE
             }
+
             when (destination.id) {
-                R.id.RecipeDetailFragment -> {
+                R.id.RecipeDetailFragment, R.id.ProfileListFragment -> {
                     binding.bottomNav.visibility = View.GONE
                 }
+                R.id.ProfileFragment -> {
+                    val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+                    val targetUserId = arguments?.getString("userId")
+                    // Se sto guardando un profilo altrui (userId non nullo e diverso dal mio), nascondo la navbar
+                    if (targetUserId != null && targetUserId != currentUid) {
+                        binding.bottomNav.visibility = View.GONE
+                    } else {
+                        binding.bottomNav.visibility = View.VISIBLE
+                    }
+                }
                 else -> {
-                    // Mostra la navbar in Home, Profilo e Nuova Ricetta
                     binding.bottomNav.visibility = View.VISIBLE
                 }
             }
@@ -132,6 +144,7 @@ class MainActivity : AppCompatActivity() {
         }
         handleNotificationIntent(intent)
     }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent) // Aggiorna l'intent dell'activity con quello della notifica
@@ -151,22 +164,28 @@ class MainActivity : AppCompatActivity() {
             notificationManager.createNotificationChannel(mChannel)
         }
     }
+
     private fun handleNotificationIntent(intent: Intent) {
+        val type = intent.getStringExtra("type")
         val recipeId = intent.getStringExtra("recipeId")
-        if (recipeId != null) {
-            // Recupera il valore 'goToComments' che può arrivare come String (da FCM) o Boolean (da Service)
+        val userId = intent.getStringExtra("userId")
+
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host) as NavHostFragment
+        val navController = navHostFragment.navController
+
+        if (type == "NEW_FOLLOW" && userId != null) {
+            // Naviga al profilo di chi ti ha seguito
+            val bundle = Bundle().apply { putString("userId", userId) }
+            navController.navigate(R.id.ProfileFragment, bundle)
+        } else if (recipeId != null) {
+            // Logica per i commenti
             val extras = intent.extras
-            val rawString = extras?.getString("goToComments")
-            val rawBoolean = extras?.getBoolean("goToComments", false) ?: false
-
-            val shouldScroll = if (rawString != null) {
-                rawString.toBoolean()
-            } else {
-                rawBoolean
+            val rawGoToComments = extras?.get("goToComments")
+            val shouldScroll = when (rawGoToComments) {
+                is Boolean -> rawGoToComments
+                is String -> rawGoToComments.toBoolean()
+                else -> false
             }
-            val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host) as NavHostFragment
-            val navController = navHostFragment.navController
-
             val bundle = Bundle().apply {
                 putString("recipeId", recipeId)
                 putBoolean("goToComments", shouldScroll)

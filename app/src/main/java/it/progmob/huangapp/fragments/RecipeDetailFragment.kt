@@ -19,13 +19,14 @@ import it.progmob.huangapp.databinding.FragmentRecipeDetailBinding
 import it.progmob.huangapp.ui.WelcomeActivity
 import it.progmob.huangapp.viewmodel.RecipeDetailViewModel
 import android.graphics.Color
-import androidx.core.text.color
 import com.airbnb.lottie.LottieProperty
 import com.airbnb.lottie.model.KeyPath
 import com.airbnb.lottie.value.LottieValueCallback
+import it.progmob.huangapp.viewmodel.ProfileViewModel
 
 class RecipeDetailFragment : Fragment() {
     private val viewModel: RecipeDetailViewModel by activityViewModels()
+    private val profileVM: ProfileViewModel by activityViewModels()
     private var _binding: FragmentRecipeDetailBinding? = null
     private val binding get() = _binding!!
     private lateinit var commentAdapter: CommentAdapter
@@ -42,58 +43,75 @@ class RecipeDetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Recupera l'ID della ricetta passato dal HomeFragment
         val recipeId = arguments?.getString("recipeId") ?: return
 
         val goToComments = arguments?.getBoolean("goToComments") ?: false
         if (goToComments) {
             binding.recipeScrollView.postDelayed({
-                // Calcola la posizione dei commenti e scrolla dolcemente
                 binding.recipeScrollView.smoothScrollTo(0, binding.comments.top + binding.recipeItem.top)
             }, 1200)
         }
-        // Setup della RecyclerView per i commenti
-        commentAdapter = CommentAdapter(onDeleteComment = { commento ->
-            android.app.AlertDialog.Builder(requireContext())
-                .setTitle("Elimina commento")
-                .setMessage("Vuoi eliminare questo commento?")
-                .setPositiveButton("Elimina") { _, _ ->
-                    viewModel.deleteComment(recipeId, commento.id)
-                }
-                .setNegativeButton("Annulla", null)
-                .show()
+
+        commentAdapter = CommentAdapter(
+            onDeleteComment = { commento ->
+                android.app.AlertDialog.Builder(requireContext())
+                    .setTitle("Elimina commento")
+                    .setMessage("Vuoi eliminare questo commento?")
+                    .setPositiveButton("Elimina") { _, _ ->
+                        viewModel.deleteComment(recipeId, commento.id)
+                    }
+                    .setNegativeButton("Annulla", null)
+                    .show()
+            },
+            onAuthorClick = { userId ->
+                val bundle = Bundle().apply { putString("userId", userId) }
+                findNavController().navigate(R.id.action_RecipeDetailFragment_to_ProfileFragment, bundle)
             }
         )
-        binding.comments.layoutManager = LinearLayoutManager(context)
-        binding.comments.adapter = commentAdapter
 
-        // Carica i dati della ricetta corrispodente
+
         viewModel.loadRecipeData(recipeId)
 
-        // Aggiorna i dati della ricetta
+        // Click sull'autore → naviga al suo profilo
+        val goToAuthorProfile = {
+            val authorId = viewModel.recipe.value?.userID
+            if (authorId != null) {
+                val bundle = Bundle().apply { putString("userId", authorId) }
+                findNavController().navigate(R.id.action_RecipeDetailFragment_to_ProfileFragment, bundle)
+            }
+        }
+        binding.authorImage.setOnClickListener { goToAuthorProfile() }
+        binding.text.setOnClickListener { goToAuthorProfile() }
+
+        // authorId corrente — aggiornato dall'observer ma il click listener è registrato una volta sola
+        var currentAuthorId: String? = null
+        binding.btnFollow.setOnClickListener {
+            currentAuthorId?.let { profileVM.clickFollow(it) }
+        }
+
+        // Unico observer per recipe: gestisce visibilità bottoni in base all'autore
         viewModel.recipe.observe(viewLifecycleOwner) { ricetta ->
             binding.recipeDetail = ricetta
             val currentUid = FirebaseAuth.getInstance().currentUser?.uid
-            if (ricetta?.userID == currentUid) {
-                // Mostra i bottoni di modifica e cancellazione se l'utente è l'autore
+            val authorId = ricetta?.userID ?: return@observe
+
+            if (authorId == currentUid) {
+                // Ricetta mia: modifica/elimina visibili, follow e preferiti nascosti
                 binding.btnEdit.visibility = View.VISIBLE
                 binding.btnDelete.visibility = View.VISIBLE
                 binding.btnFavorite.visibility = View.GONE
+                binding.btnFollow.visibility = View.GONE
 
-                // Logica del bottone modifica ricetta
                 binding.btnEdit.setOnClickListener {
-                    val bundle = Bundle().apply { putString("recipeId", ricetta?.id) }
+                    val bundle = Bundle().apply { putString("recipeId", ricetta.id) }
                     findNavController().navigate(R.id.action_RecipeDetailFragment_to_NewRecipeFragment, bundle)
                 }
-
-                //Logica del bottone elimina ricetta
                 binding.btnDelete.setOnClickListener {
-                    // Avviso di conferma
                     android.app.AlertDialog.Builder(requireContext())
                         .setTitle("Elimina ricetta")
                         .setMessage("Sei sicuro di voler eliminare questa ricetta?")
                         .setPositiveButton("Elimina") { _, _ ->
-                            ricetta?.id?.let { id ->
+                            ricetta.id?.let { id ->
                                 Firebase.firestore.collection("recipes").document(id).delete()
                                     .addOnSuccessListener {
                                         Toast.makeText(context, "Ricetta eliminata", Toast.LENGTH_SHORT).show()
@@ -104,13 +122,19 @@ class RecipeDetailFragment : Fragment() {
                         .setNegativeButton("Annulla", null)
                         .show()
                 }
+            } else {
+                // Ricetta altrui: follow e preferiti visibili, modifica/elimina nascosti
+                binding.btnEdit.visibility = View.GONE
+                binding.btnDelete.visibility = View.GONE
+                binding.btnFavorite.visibility = View.VISIBLE
+                binding.btnFollow.visibility = View.VISIBLE
+                currentAuthorId = authorId
+                profileVM.checkIfFollowing(authorId)
             }
         }
 
         viewModel.checkIfFavorite(recipeId)
-
         viewModel.isFavorite.observe(viewLifecycleOwner) { isFav ->
-            // Imposta il frame iniziale dell'animazione
             if (isFav) {
                 setLottieColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.rosso_salmone))
                 binding.btnFavorite.progress = 0.5f
@@ -119,39 +143,42 @@ class RecipeDetailFragment : Fragment() {
                 binding.btnFavorite.progress = 0.0f
             }
         }
-
         binding.btnFavorite.setOnClickListener {
             val currentlyFavorite = viewModel.isFavorite.value ?: false
-
             if (currentlyFavorite) {
-                // Animazione per "Togliere"
                 binding.btnFavorite.setMinAndMaxFrame(0, 10)
-                binding.btnFavorite.speed = -2f // Gira l'animazione al contrario
+                binding.btnFavorite.speed = -2f
                 binding.btnFavorite.playAnimation()
-
             } else {
-                // Animazione per "Aggiungere"
                 binding.btnFavorite.setMinAndMaxFrame(0, 10)
                 binding.btnFavorite.speed = 2f
                 binding.btnFavorite.playAnimation()
-
             }
-
             viewModel.saveFavorite(recipeId)
         }
+            profileVM.isFollowing.observe(viewLifecycleOwner) { isFollowing ->
+            if (isFollowing) {
+                binding.btnFollow.text = "Seguito"
+                binding.btnFollow.setTextColor(Color.GRAY)
+                binding.btnFollow.setBackgroundTintList(androidx.core.content.ContextCompat.getColorStateList(requireContext(), android.R.color.transparent))
+                binding.btnFollow.setStrokeColorResource(android.R.color.darker_gray)
+            } else {
+                binding.btnFollow.text = "Segui"
+                binding.btnFollow.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.white))
+                binding.btnFollow.setBackgroundTintList(androidx.core.content.ContextCompat.getColorStateList(requireContext(), R.color.rosso_salmone))
+                binding.btnFollow.setStrokeColorResource(R.color.rosso_salmone)
+            }
+        }
 
-
-        // Aggiorna la lista dei commenti quando ne arrivano di nuovi
+        binding.comments.layoutManager = LinearLayoutManager(context)
+        binding.comments.adapter = commentAdapter
         viewModel.comments.observe(viewLifecycleOwner) { listaCommenti ->
             commentAdapter.updateData(listaCommenti)
         }
 
-        //Logica del tasto invio commento
         binding.btnSendComment.setOnClickListener {
             val user = FirebaseAuth.getInstance().currentUser
-
             if (user == null) {
-                // Se non è loggato, avvisa e manda alla WelcomeActivity
                 Toast.makeText(context, "Accedi per poter commentare", Toast.LENGTH_SHORT).show()
                 startActivity(Intent(requireContext(), WelcomeActivity::class.java))
             } else {

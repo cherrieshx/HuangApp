@@ -1,6 +1,7 @@
 package it.progmob.huangapp.fragments
 
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -8,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
@@ -27,18 +29,15 @@ class ProfileFragment : Fragment() {
 
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
+
     private val profileVM: ProfileViewModel by activityViewModels()
     private val homeVM: HomeViewModel by activityViewModels()
-    
     private lateinit var adapter: MyAdapter
 
-    //Come in NewRecipeFragment gestisce la selezione dell'immagine
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { selectedUri ->
             profileVM.uploadProfileImage(selectedUri) { url ->
-                if (url != null) {
-                    Toast.makeText(context, "Immagine di profilo caricata!", Toast.LENGTH_SHORT).show()
-                }
+                if (url != null) Toast.makeText(context, "Immagine di profilo caricata!", Toast.LENGTH_SHORT).show()
                 else Toast.makeText(context, "Errore durante il caricamento", Toast.LENGTH_SHORT).show()
             }
         }
@@ -53,20 +52,87 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+        val targetUserId = arguments?.getString("userId") ?: currentUid ?: return
+        val isOwnProfile = targetUserId == currentUid
 
-        //Carica dati utente
-        profileVM.loadUserProfile()
-
-        // Osserva i dati dell'utente per aggiornare l'interfaccia
-        profileVM.userProfile.observe(viewLifecycleOwner) { info ->
-            binding.userInfo = info
+        // Imposta il titolo della toolbar
+        if (isOwnProfile) {
+            (activity as? AppCompatActivity)?.supportActionBar?.title = "Il mio Profilo"
         }
 
         binding.profileVM = profileVM
         binding.lifecycleOwner = viewLifecycleOwner
-        binding.userRecipes.layoutManager = LinearLayoutManager(context)
 
+        // Carica il profilo dell'utente target
+        profileVM.loadUserProfileById(targetUserId)
+
+        profileVM.userProfile.observe(viewLifecycleOwner) { info ->
+            binding.userInfo = info
+            if (!isOwnProfile) {
+                (activity as? AppCompatActivity)?.supportActionBar?.title = info.username
+            }
+        }
+
+        profileVM.followInfo.observe(viewLifecycleOwner) { info ->
+            binding.followInfo = info
+        }
+
+        // Mostra/nascondi elementi in base al tipo di profilo
+        if (isOwnProfile) {
+            binding.welcomeText.visibility = View.VISIBLE
+            binding.cardSettings.visibility = View.VISIBLE
+            binding.cardSignOut.visibility = View.VISIBLE
+            binding.btnFollow.visibility = View.GONE
+            binding.tabLayoutProfile.getTabAt(1)?.view?.visibility = View.VISIBLE
+        } else {
+            binding.welcomeText.visibility = View.GONE
+            binding.cardSettings.visibility = View.GONE
+            binding.cardSignOut.visibility = View.GONE
+            // Per i profili altrui mostriamo solo "Le mie ricette" (nascondiamo il tab dei preferiti)
+            binding.tabLayoutProfile.getTabAt(1)?.view?.visibility = View.GONE
+
+            profileVM.checkIfFollowing(targetUserId)
+            binding.btnFollow.visibility = View.VISIBLE
+            binding.btnFollow.setOnClickListener {
+                profileVM.clickFollow(targetUserId)
+            }
+        }
+
+        profileVM.isFollowing.observe(viewLifecycleOwner) { isFollowing ->
+            if (isFollowing) {
+                binding.btnFollow.text = "Seguito"
+                binding.btnFollow.setTextColor(Color.GRAY)
+                binding.btnFollow.setStrokeColorResource(android.R.color.darker_gray)
+                binding.btnFollow.backgroundTintList = androidx.core.content.ContextCompat.getColorStateList(requireContext(), android.R.color.transparent)
+            } else {
+                binding.btnFollow.text = "Segui"
+                binding.btnFollow.setTextColor(Color.WHITE)
+                binding.btnFollow.setStrokeColorResource(R.color.rosso_salmone)
+                binding.btnFollow.backgroundTintList = androidx.core.content.ContextCompat.getColorStateList(requireContext(), R.color.rosso_salmone)
+            }
+        }
+
+        // Click su Followers
+        val openFollowers = {
+            val ids = profileVM.followInfo.value?.followers ?: emptyList()
+            profileVM.loadUsersByIds(ids)
+            val bundle = Bundle().apply { putString("title", "Followers") }
+            findNavController().navigate(R.id.action_ProfileFragment_to_ProfileListFragment, bundle)
+        }
+
+        // Click su Seguiti
+        val openFollowing = {
+            val ids = profileVM.followInfo.value?.following ?: emptyList()
+            profileVM.loadUsersByIds(ids)
+            val bundle = Bundle().apply { putString("title", "Seguiti") }
+            findNavController().navigate(R.id.action_ProfileFragment_to_ProfileListFragment, bundle)
+        }
+        binding.followingString.setOnClickListener { openFollowing() }
+        binding.followingSize.setOnClickListener { openFollowing() }
+
+        // Setup RecyclerView ricette
+        binding.userRecipes.layoutManager = LinearLayoutManager(context)
         adapter = MyAdapter(emptyList()) { ricettaCliccata ->
             val bundle = Bundle().apply {
                 putString("recipeId", ricettaCliccata.id)
@@ -76,22 +142,20 @@ class ProfileFragment : Fragment() {
         }
         binding.userRecipes.adapter = adapter
 
+        homeVM.loadUserRecipes(targetUserId)
+        if (isOwnProfile) homeVM.loadFavorites(targetUserId)
 
-        homeVM.loadUserRecipes(userId)
-        homeVM.loadFavorites(userId)
         homeVM.userRecipes.observe(viewLifecycleOwner) { listaMieRicette ->
-            // Aggiorna solo se il tab selezionato è "Le mie Ricette" (indice 0)
             if (binding.tabLayoutProfile.selectedTabPosition == 0) {
-                adapter.updateData(listaMieRicette)
-                updateEmptyState(listaMieRicette.isEmpty(), isFavorites = false)
+                adapter.updateData(listaMieRicette ?: emptyList())
+                updateEmptyState(listaMieRicette?.isEmpty() ?: true, isFavorites = false)
             }
         }
 
         homeVM.favorites.observe(viewLifecycleOwner) { listaPreferiti ->
-            // Aggiorna solo se il tab selezionato è "Preferiti" (indice 1)
             if (binding.tabLayoutProfile.selectedTabPosition == 1) {
-                adapter.updateData(listaPreferiti)
-                updateEmptyState(listaPreferiti.isEmpty(), isFavorites = true)
+                adapter.updateData(listaPreferiti ?: emptyList())
+                updateEmptyState(listaPreferiti?.isEmpty() ?: true, isFavorites = true)
             }
         }
 
@@ -99,13 +163,11 @@ class ProfileFragment : Fragment() {
             override fun onTabSelected(tab: com.google.android.material.tabs.TabLayout.Tab?) {
                 when (tab?.position) {
                     0 -> {
-                        // Switch a Mie Ricette
                         val mie = homeVM.userRecipes.value ?: emptyList()
                         adapter.updateData(mie)
                         updateEmptyState(mie.isEmpty(), isFavorites = false)
                     }
                     1 -> {
-                        // Switch a Preferiti
                         val favs = homeVM.favorites.value ?: emptyList()
                         adapter.updateData(favs)
                         updateEmptyState(favs.isEmpty(), isFavorites = true)
@@ -116,53 +178,60 @@ class ProfileFragment : Fragment() {
             override fun onTabReselected(tab: com.google.android.material.tabs.TabLayout.Tab?) {}
         })
 
-
-        binding.changeImage.setOnClickListener {
-            pickImageLauncher.launch("image/*")
-        }
-         //Indirizza alla pagina di modifica username
-        binding.changeUsername.setOnClickListener {
-            findNavController().navigate(R.id.action_ProfileFragment_to_ChangeUsernameFragment)
-        }
-
-        // Logica per il bottone di logout, dopo il logout torna alla pagina principale
-        binding.signOut.setOnClickListener {
-            val userId = FirebaseAuth.getInstance().currentUser?.uid
-            if (userId != null) {
-                // Rimuove il token dal DB prima di uscire
-                Firebase.firestore.collection("users").document(userId)
-                    .update("fcmToken", null)
-                    .addOnCompleteListener {
-                        FirebaseAuth.getInstance().signOut()
-                        val intent = Intent(requireContext(), MainActivity::class.java)
-                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        startActivity(intent)
-                    }
-            } else {
-                FirebaseAuth.getInstance().signOut()
-                val intent = Intent(requireContext(), MainActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
+        // Azioni solo per il proprio profilo
+        if (isOwnProfile) {
+            binding.changeImage.setOnClickListener {
+                pickImageLauncher.launch("image/*")
+            }
+            binding.changeUsername.setOnClickListener {
+                findNavController().navigate(R.id.action_ProfileFragment_to_ChangeUsernameFragment)
+            }
+            binding.signOut.setOnClickListener {
+                val uid = FirebaseAuth.getInstance().currentUser?.uid
+                if (uid != null) {
+                    Firebase.firestore.collection("users").document(uid)
+                        .update("fcmToken", null)
+                        .addOnCompleteListener {
+                            FirebaseAuth.getInstance().signOut()
+                            val intent = Intent(requireContext(), MainActivity::class.java)
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            startActivity(intent)
+                        }
+                } else {
+                    FirebaseAuth.getInstance().signOut()
+                    val intent = Intent(requireContext(), MainActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+        val targetUserId = arguments?.getString("userId") ?: currentUid ?: return
+        profileVM.loadUserProfileById(targetUserId)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        profileVM.stopListener()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
+
     private fun updateEmptyState(isEmpty: Boolean, isFavorites: Boolean) {
         if (isFavorites) {
-            // Siamo nel tab Preferiti
             binding.emptyFavorites.visibility = if (isEmpty) View.VISIBLE else View.GONE
             binding.emptyMyRecipes.visibility = View.GONE
         } else {
-            // Siamo nel tab Mie Ricette
             binding.emptyMyRecipes.visibility = if (isEmpty) View.VISIBLE else View.GONE
             binding.emptyFavorites.visibility = View.GONE
         }
-
-        // Nascondi la lista se è vuota per far vedere bene il messaggio
         binding.userRecipes.visibility = if (isEmpty) View.GONE else View.VISIBLE
     }
 }

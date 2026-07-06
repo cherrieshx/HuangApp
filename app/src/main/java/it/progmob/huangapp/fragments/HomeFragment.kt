@@ -1,6 +1,7 @@
 package it.progmob.huangapp.fragments
 
 
+import android.graphics.Color
 import android.os.Bundle
 import android.widget.Filter
 import androidx.fragment.app.Fragment
@@ -14,6 +15,7 @@ import it.progmob.huangapp.ui.data.model.Recipes
 import it.progmob.huangapp.viewmodel.HomeViewModel
 import it.progmob.huangapp.databinding.FragmentHomeBinding
 import androidx.navigation.fragment.findNavController
+import com.google.firebase.auth.FirebaseAuth
 
 class HomeFragment : Fragment() {
 
@@ -63,6 +65,27 @@ class HomeFragment : Fragment() {
         HomeVM.recipesList.observe(viewLifecycleOwner) { listaDB ->
             if (listaDB != null) {
                 adapter.updateData(listaDB)
+            }
+        }
+
+        val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+        if (currentUid != null) {
+            HomeVM.loadFollowingIds(currentUid)
+            binding.chipFollowing.visibility = View.VISIBLE
+        } else {
+            binding.chipFollowing.visibility = View.GONE
+        }
+
+        binding.chipFollowing.setOnCheckedChangeListener { _, isChecked ->
+            HomeVM.toggleFollowingFilter(isChecked)
+
+            // Cambia aspetto visivo per feedback
+            if (isChecked) {
+                binding.chipFollowing.setChipBackgroundColorResource(R.color.rosso_salmone)
+                binding.chipFollowing.setTextColor(Color.WHITE)
+            } else {
+                binding.chipFollowing.setChipBackgroundColorResource(R.color.white)
+                binding.chipFollowing.setTextColor(Color.BLACK)
             }
         }
         val categories = arrayOf("Tutte", "Antipasto", "Primo", "Secondo", "Contorno", "Dolce")

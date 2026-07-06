@@ -35,7 +35,13 @@ class SignUpViewModel : ViewModel() {
             .addOnSuccessListener { result ->
                 val uid = result.user?.uid ?: return@addOnSuccessListener // Ottieni l'ID dell'utente
                 FirebaseFirestore.getInstance().collection("users").document(uid)
-                    .set(mapOf("username" to us, "email" to em, "userID" to uid)) // Salva i dati dell'utente nel database Firestore
+                    .set(mapOf(
+                        "username" to us,
+                        "email" to em,
+                        "userID" to uid,
+                        "following" to emptyList<String>(),
+                        "followers" to emptyList<String>()
+                    ))
                     .addOnSuccessListener { _signUpSuccess.value = true }
                     .addOnFailureListener { _error.value = it.localizedMessage }
             }
