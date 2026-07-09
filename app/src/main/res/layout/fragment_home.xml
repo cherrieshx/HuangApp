@@ -23,7 +23,8 @@
             android:paddingVertical="8dp"
             android:gravity="center_vertical"
             android:background="@color/white"
-            android:weightSum="1">
+            android:weightSum="1"
+            android:translationY="-5dp">
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/menu_category"
@@ -48,19 +49,29 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <Button
-                android:id="@+id/btn_sort_time"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/menu_sort"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.4"
+                android:layout_weight="0.5"
                 android:layout_marginStart="8dp"
-                android:text="Tempo"
-                android:textColor="@color/black"
-                android:textSize="13sp"
-                app:iconTint="@color/black"
-                app:iconSize="30dp"
-                android:textAllCaps="false" />
+                app:boxStrokeColor="@color/grey"
+                app:boxStrokeWidth="1dp"
+                app:hintTextColor="@color/black"
+                android:hint="Ordina">
+
+                <AutoCompleteTextView
+                    android:id="@+id/auto_complete_sort"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    android:minHeight="48dp"
+                    android:paddingVertical="12dp"
+                    android:textSize="14sp"
+                    tools:ignore="LabelFor,DuplicateClickableViewCheck,SpeakableTextPresentCheck" />
+
+            </com.google.android.material.textfield.TextInputLayout>
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_following"
                 style="@style/Widget.MaterialComponents.Chip.Choice"

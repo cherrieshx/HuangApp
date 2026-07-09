@@ -48,7 +48,7 @@ class NewRecipeFragment : Fragment() {
 
         val recipeId = arguments?.getString("recipeId")
         if (recipeId != null) { //Carica dati per la modifica
-            viewModel.loadRecipeForEditing(recipeId)
+            viewModel.loadRecipeEdit(recipeId)
             binding.btnSave.text = "Salva modifiche"
         }
 
@@ -58,7 +58,7 @@ class NewRecipeFragment : Fragment() {
         }
 
         //Configurazione selezione per la categoria
-        val categorie = arrayOf("Seleziona categoria", "Antipasto", "Primo", "Secondo", "Contorno", "Dolce", "Snack")
+        val categorie = arrayOf("Seleziona categoria", "Antipasto", "Primo", "Secondo", "Contorno", "Dolce")
         val adapter =
             ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, categorie)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -82,7 +82,6 @@ class NewRecipeFragment : Fragment() {
                 binding.spinnerCategory.setSelection(index)
             }
         }
-
 
         // Configurazione per ingredienti
         val ingAdapter = FormListAdapter(

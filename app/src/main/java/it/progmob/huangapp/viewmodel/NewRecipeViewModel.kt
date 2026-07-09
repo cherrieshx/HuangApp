@@ -28,7 +28,7 @@ class NewRecipeViewModel : ViewModel() {
     var isEditing = false
     var recipeIdToEdit: String? = null
 
-    fun loadRecipeForEditing(recipeId: String) {
+    fun loadRecipeEdit(recipeId: String) {
         isEditing = true
         recipeIdToEdit = recipeId
         
@@ -71,6 +71,7 @@ class NewRecipeViewModel : ViewModel() {
             }
     }
 
+    // Funzion per la gestione delle liste di ingredienti e passaggi
     fun addItem(list: MutableLiveData<MutableList<String>>) {
         val current = list.value ?: mutableListOf()
 
@@ -78,12 +79,12 @@ class NewRecipeViewModel : ViewModel() {
             _errorMsg.value = "Compila la riga precedente prima di aggiungerne una nuova"
             return
         }
-
         current.add("")
         list.value = current
         _errorMsg.value = ""
     }
 
+    // Funzione per la gestione delle liste di ingredienti e passaggi
     fun removeItem(pos: Int, list: MutableLiveData<MutableList<String>>) {
         list.value?.let {
             if (it.size > 1) {
@@ -106,7 +107,6 @@ class NewRecipeViewModel : ViewModel() {
 
     fun saveRecipe(onSuccess: () -> Unit) {
         val user = auth.currentUser ?: return
-
         val n = name.value ?: ""
         val d = description.value ?: ""
         val img = image.value ?: ""
@@ -127,13 +127,11 @@ class NewRecipeViewModel : ViewModel() {
                 } else {
                     "Anonimo"
                 }
-
                 val userImg = if (task.isSuccessful && task.result?.exists() == true) {
                     task.result?.getString("userImage") ?: ""
                 } else {
                     ""
                 }
-
                 val recipeData = Recipes(
                     id = recipeIdToEdit ?: "",
                     name = n,

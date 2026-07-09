@@ -24,16 +24,12 @@ import it.progmob.huangapp.databinding.FragmentProfileBinding
 import it.progmob.huangapp.viewmodel.HomeViewModel
 import it.progmob.huangapp.viewmodel.ProfileViewModel
 
-
 class ProfileFragment : Fragment() {
-
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
-
     private val profileVM: ProfileViewModel by activityViewModels()
     private val homeVM: HomeViewModel by activityViewModels()
     private lateinit var adapter: MyAdapter
-
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { selectedUri ->
             profileVM.uploadProfileImage(selectedUri) { url ->
@@ -69,7 +65,7 @@ class ProfileFragment : Fragment() {
 
         profileVM.userProfile.observe(viewLifecycleOwner) { info ->
             binding.userInfo = info
-            if (!isOwnProfile) {
+            if (!isOwnProfile && info != null) {
                 (activity as? AppCompatActivity)?.supportActionBar?.title = info.username
             }
         }
@@ -78,18 +74,17 @@ class ProfileFragment : Fragment() {
             binding.followInfo = info
         }
 
-        // Mostra/nascondi elementi in base al tipo di profilo
+        // Mostra i bottoni solo per il profilo dell'utente corrente
         if (isOwnProfile) {
             binding.welcomeText.visibility = View.VISIBLE
             binding.cardSettings.visibility = View.VISIBLE
             binding.cardSignOut.visibility = View.VISIBLE
             binding.btnFollow.visibility = View.GONE
             binding.tabLayoutProfile.getTabAt(1)?.view?.visibility = View.VISIBLE
-        } else {
+        } else { //Nasconde bottoni per altri profili
             binding.welcomeText.visibility = View.GONE
             binding.cardSettings.visibility = View.GONE
             binding.cardSignOut.visibility = View.GONE
-            // Per i profili altrui mostriamo solo "Le mie ricette" (nascondiamo il tab dei preferiti)
             binding.tabLayoutProfile.getTabAt(1)?.view?.visibility = View.GONE
 
             profileVM.checkIfFollowing(targetUserId)
@@ -99,6 +94,7 @@ class ProfileFragment : Fragment() {
             }
         }
 
+        // Configurazione del bottone segui/seguito
         profileVM.isFollowing.observe(viewLifecycleOwner) { isFollowing ->
             if (isFollowing) {
                 binding.btnFollow.text = "Seguito"
@@ -130,6 +126,8 @@ class ProfileFragment : Fragment() {
         }
         binding.followingString.setOnClickListener { openFollowing() }
         binding.followingSize.setOnClickListener { openFollowing() }
+        binding.followersString.setOnClickListener { openFollowers() }
+        binding.followersSize.setOnClickListener { openFollowers() }
 
         // Setup RecyclerView ricette
         binding.userRecipes.layoutManager = LinearLayoutManager(context)
@@ -159,6 +157,7 @@ class ProfileFragment : Fragment() {
             }
         }
 
+        // Gestisce il cambio di tab nel TabLayout
         binding.tabLayoutProfile.addOnTabSelectedListener(object : com.google.android.material.tabs.TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: com.google.android.material.tabs.TabLayout.Tab?) {
                 when (tab?.position) {
@@ -207,6 +206,7 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    // Aggiorna il profilo ogni volta che torna alla pagina
     override fun onResume() {
         super.onResume()
         val currentUid = FirebaseAuth.getInstance().currentUser?.uid

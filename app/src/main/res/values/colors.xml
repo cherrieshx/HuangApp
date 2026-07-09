@@ -12,7 +12,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="grey">#808080</color>
     <color name="rosso">#D32F2F</color>
-    <color name="grigio_chiaro">#ebe8e6</color>
+    <color name="grigio_chiaro">#ededed</color>
 
 
 </resources>

@@ -9,6 +9,7 @@ data class LoggedInUser(
     val userImage: String = "",
     val favorites: List<String> = emptyList(),
     val following: List<String> = emptyList(),
-    val followers: List<String> = emptyList()
+    val followers: List<String> = emptyList(),
+    val feedcount: Map<String, Int> = emptyMap()
 
 )

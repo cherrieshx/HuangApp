@@ -19,13 +19,15 @@ import it.progmob.huangapp.databinding.FragmentRecipeDetailBinding
 import it.progmob.huangapp.ui.WelcomeActivity
 import it.progmob.huangapp.viewmodel.RecipeDetailViewModel
 import android.graphics.Color
+import android.util.Log
+import androidx.fragment.app.viewModels
 import com.airbnb.lottie.LottieProperty
 import com.airbnb.lottie.model.KeyPath
 import com.airbnb.lottie.value.LottieValueCallback
 import it.progmob.huangapp.viewmodel.ProfileViewModel
 
 class RecipeDetailFragment : Fragment() {
-    private val viewModel: RecipeDetailViewModel by activityViewModels()
+    private val viewModel: RecipeDetailViewModel by viewModels()
     private val profileVM: ProfileViewModel by activityViewModels()
     private var _binding: FragmentRecipeDetailBinding? = null
     private val binding get() = _binding!!
@@ -45,23 +47,23 @@ class RecipeDetailFragment : Fragment() {
 
         val recipeId = arguments?.getString("recipeId") ?: return
 
+        // Gestisce scroll alla lista commenti dopo il click ala notifica
         val goToComments = arguments?.getBoolean("goToComments") ?: false
-        if (goToComments) {
+        if (goToComments) { // Scroll alla lista commenti
             binding.recipeScrollView.postDelayed({
                 binding.recipeScrollView.smoothScrollTo(0, binding.comments.top + binding.recipeItem.top)
             }, 1200)
         }
 
         commentAdapter = CommentAdapter(
-            onDeleteComment = { commento ->
-                android.app.AlertDialog.Builder(requireContext())
-                    .setTitle("Elimina commento")
-                    .setMessage("Vuoi eliminare questo commento?")
-                    .setPositiveButton("Elimina") { _, _ ->
-                        viewModel.deleteComment(recipeId, commento.id)
-                    }
-                    .setNegativeButton("Annulla", null)
-                    .show()
+            onDeleteComment = { commento -> android.app.AlertDialog.Builder(requireContext())
+                .setTitle("Elimina commento")
+                .setMessage("Vuoi eliminare questo commento?")
+                .setPositiveButton("Elimina") { _, _ ->
+                    viewModel.deleteComment(recipeId, commento.id)
+                }
+                .setNegativeButton("Annulla", null)
+                .show()
             },
             onAuthorClick = { userId ->
                 val bundle = Bundle().apply { putString("userId", userId) }
@@ -69,10 +71,9 @@ class RecipeDetailFragment : Fragment() {
             }
         )
 
+        // Carica i dettagli della ricetta
 
         viewModel.loadRecipeData(recipeId)
-
-        // Click sull'autore → naviga al suo profilo
         val goToAuthorProfile = {
             val authorId = viewModel.recipe.value?.userID
             if (authorId != null) {
@@ -80,23 +81,24 @@ class RecipeDetailFragment : Fragment() {
                 findNavController().navigate(R.id.action_RecipeDetailFragment_to_ProfileFragment, bundle)
             }
         }
+        // Click sull'immagine o username dell'autore e va al suo profilo
         binding.authorImage.setOnClickListener { goToAuthorProfile() }
         binding.text.setOnClickListener { goToAuthorProfile() }
 
-        // authorId corrente — aggiornato dall'observer ma il click listener è registrato una volta sola
+        // authorId corrente aggiornato dall'observer ma il click listener è registrato una volta sola
         var currentAuthorId: String? = null
         binding.btnFollow.setOnClickListener {
             currentAuthorId?.let { profileVM.clickFollow(it) }
         }
 
-        // Unico observer per recipe: gestisce visibilità bottoni in base all'autore
+        // Gestisce visibilità bottoni in base all'autore
         viewModel.recipe.observe(viewLifecycleOwner) { ricetta ->
             binding.recipeDetail = ricetta
             val currentUid = FirebaseAuth.getInstance().currentUser?.uid
             val authorId = ricetta?.userID ?: return@observe
 
             if (authorId == currentUid) {
-                // Ricetta mia: modifica/elimina visibili, follow e preferiti nascosti
+                // Sono autore allora modifica/elimina visibili, follow e preferiti nascosti
                 binding.btnEdit.visibility = View.VISIBLE
                 binding.btnDelete.visibility = View.VISIBLE
                 binding.btnFavorite.visibility = View.GONE
@@ -123,7 +125,7 @@ class RecipeDetailFragment : Fragment() {
                         .show()
                 }
             } else {
-                // Ricetta altrui: follow e preferiti visibili, modifica/elimina nascosti
+                // Ricetta di altri allora follow e preferiti visibili, modifica/elimina nascosti
                 binding.btnEdit.visibility = View.GONE
                 binding.btnDelete.visibility = View.GONE
                 binding.btnFavorite.visibility = View.VISIBLE
@@ -131,18 +133,24 @@ class RecipeDetailFragment : Fragment() {
                 currentAuthorId = authorId
                 profileVM.checkIfFollowing(authorId)
             }
+
+            ricetta?.category?.let { category ->
+                viewModel.isInterestedTimer(category)
+            }
         }
 
         viewModel.checkIfFavorite(recipeId)
+        // Gestisce logica dell'icona favorite animato e aggiorna il colore
         viewModel.isFavorite.observe(viewLifecycleOwner) { isFav ->
             if (isFav) {
-                setLottieColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.rosso_salmone))
+                setIcColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.rosso_salmone))
                 binding.btnFavorite.progress = 0.5f
             } else {
-                setLottieColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.rosso_salmone))
+                setIcColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.rosso_salmone))
                 binding.btnFavorite.progress = 0.0f
             }
         }
+        binding.btnFavorite.setOnClickListener(null) // rimuove listener precedenti
         binding.btnFavorite.setOnClickListener {
             val currentlyFavorite = viewModel.isFavorite.value ?: false
             if (currentlyFavorite) {
@@ -156,7 +164,9 @@ class RecipeDetailFragment : Fragment() {
             }
             viewModel.saveFavorite(recipeId)
         }
-            profileVM.isFollowing.observe(viewLifecycleOwner) { isFollowing ->
+
+        // Gestisce il colore e testo del bottone segui/seguito
+        profileVM.isFollowing.observe(viewLifecycleOwner) { isFollowing ->
             if (isFollowing) {
                 binding.btnFollow.text = "Seguito"
                 binding.btnFollow.setTextColor(Color.GRAY)
@@ -191,10 +201,11 @@ class RecipeDetailFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        viewModel.stopInterestTimer()
         _binding = null
     }
 
-    private fun setLottieColor(color: Int) {
+    private fun setIcColor(color: Int) {
         binding.btnFavorite.addValueCallback(
             KeyPath("**"), // Il simbolo "**" indica di applicare il colore a tutti i livelli del JSON
             LottieProperty.COLOR_FILTER,

@@ -90,7 +90,6 @@
     <fragment
         android:id="@+id/ProfileListFragment"
         android:name="it.progmob.huangapp.fragments.ProfileListFragment"
-        android:label="Utenti"
         tools:layout="@layout/profile_item_list">
         <argument
             android:name="title"

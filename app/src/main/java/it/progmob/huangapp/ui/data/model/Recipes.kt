@@ -1,7 +1,6 @@
 package it.progmob.huangapp.ui.data.model
 
 data class Recipes (
-
     var id: String = "",
     val name: String = "",
     val image: String = "",
@@ -13,6 +12,6 @@ data class Recipes (
     val userID: String = "",
     val username: String = "",
     val userImage: String = "",
-    val comments: List<String> = emptyList()
-
+    val commentCount: Int = 0, // Sostituito List<String> con Int per efficienza
+    val favoriteCount: Int = 0
 )

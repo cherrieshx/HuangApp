@@ -29,7 +29,10 @@ class RecipeDetailViewModel : ViewModel() {
     val isLoading: LiveData<Boolean> = _isLoading
     private val _isFavorite = MutableLiveData<Boolean>(false)
     val isFavorite: LiveData<Boolean> = _isFavorite
-
+    private var interestJob: kotlinx.coroutines.Job? = null
+    private val _isFavoriteReady = MutableLiveData(false)
+    val isFavoriteReady: LiveData<Boolean> = _isFavoriteReady
+    private var isSavingFavorite = false
     fun loadRecipeData(recipeId: String) {
 
         //Pulisce i dati prima di ricaricare
@@ -37,8 +40,10 @@ class RecipeDetailViewModel : ViewModel() {
         _recipe.value = null
         _comments.value = emptyList()
         _isFavorite.value = false
+        _isFavoriteReady.value = false
+        isSavingFavorite = false
 
-        _isLoading.value = true
+        // Carica i dati in parallelo
         viewModelScope.launch {
             try {
                 val document = db.collection("recipes").document(recipeId).get().await()
@@ -95,38 +100,52 @@ class RecipeDetailViewModel : ViewModel() {
     }
 
     fun checkIfFavorite(recipeId: String) {
-        val user = auth.currentUser ?: return
+        _isFavoriteReady.value = false
+        val user = auth.currentUser ?: run { _isFavoriteReady.value = true; return }
         db.collection("users").document(user.uid).collection("favorites")
-            .document(recipeId).get()
-            .addOnSuccessListener { document -> _isFavorite.value = document.exists()
+            .document(recipeId).addSnapshotListener { document, _ ->
+                val exists = document?.exists() ?: false
+                Log.d("FAV", "checkIfFavorite snapshot: exists=$exists")
+                _isFavorite.value = exists
+                _isFavoriteReady.value = true
             }
     }
 
-
     fun saveFavorite(recipeId: String) {
+        if (isSavingFavorite) return
         val user = auth.currentUser ?: return
         val docRef = db.collection("users").document(user.uid).collection("favorites").document(recipeId)
+        val recipeRef = db.collection("recipes").document(recipeId)
+        isSavingFavorite = true
 
-        if (_isFavorite.value == true) {
-            docRef.delete()
-                .addOnSuccessListener { _isFavorite.value = false }
-                .addOnFailureListener { Log.e("FAV", "Errore rimozione: ${it.message}") }
+        if (_isFavorite.value == true) { docRef.delete().addOnSuccessListener {
+            _isFavorite.value = false
+            isSavingFavorite = false
+            Log.d("FAV", "Rimosso dai preferiti")
+        }.addOnFailureListener {
+            Log.e("FAV", "Errore rimozione: ${it.message}")
+            isSavingFavorite = false
+            }
         } else {
-            val data = mapOf("timestamp" to System.currentTimeMillis())
-            docRef.set(data)
-                .addOnSuccessListener { _isFavorite.value = true }
-                .addOnFailureListener { Log.e("FAV", "Errore aggiunta: ${it.message}") }
+            val data = mapOf("timestamp" to System.currentTimeMillis())//Crea una mappa con il timestamp
+            docRef.set(data)  // Aggiunge il documento vuoto
+                .addOnSuccessListener {
+                    _isFavorite.value = true
+                    isSavingFavorite = false
+                    Log.d("FAV", "Aggiunto ai preferiti")
+                }
+                .addOnFailureListener {
+                    Log.e("FAV", "Errore aggiunta: ${it.message}")
+                    isSavingFavorite = false
+                }
         }
     }
 
-
     fun sendComment(recipeId: String, onComplete: () -> Unit) {
-        if (_isSending.value == true) return // Se sta inviando esce
-
+        if (_isSending.value == true) return
         val text = commentText.value ?: ""
         val user = auth.currentUser ?: return
         if (text.isBlank()) return
-
         _isSending.value = true
 
         db.collection("users").document(user.uid).get()
@@ -147,6 +166,8 @@ class RecipeDetailViewModel : ViewModel() {
                     .addOnSuccessListener {
                         commentText.value = ""
                         _isSending.value = false
+                        db.collection("recipes").document(recipeId)
+                            .update("commentCount", com.google.firebase.firestore.FieldValue.increment(1))
                         onComplete()
                     }
                     .addOnFailureListener {
@@ -164,10 +185,45 @@ class RecipeDetailViewModel : ViewModel() {
                 db.collection("recipes").document(recipeId)
                     .collection("comments").document(commentId)
                     .delete().await()
+                db.collection("recipes").document(recipeId)
+                    .update("commentCount", com.google.firebase.firestore.FieldValue.increment(-1))
             } catch (e: Exception) {
-
                 e.printStackTrace()
             }
         }
     }
+
+    //  Funzione per gestire il timer di interesse
+    fun isInterestedTimer(category: String) {
+
+        val userId = auth.currentUser?.uid ?: return
+        if (category.isBlank()) return
+        //Cancella timer precedenti
+        interestJob?.cancel()
+        interestJob = viewModelScope.launch {
+            try {
+                kotlinx.coroutines.delay(10000)
+                // Se arriviamo qui senza essere stati cancellati, aggiorniamo Firestore
+                addCategoryCount(userId,category)
+
+            } catch (e: kotlinx.coroutines.CancellationException) {
+
+                Log.d("InterestTimer", "Timer annullato: l'utente è uscito troppo presto")
+            }
+        }
+    }
+
+    // Incrementa il contatore di interesse per la categoria specificata
+    fun addCategoryCount(userId: String, category: String) {
+        db.collection("users").document(userId)
+            .update("feedcount.$category", com.google.firebase.firestore.FieldValue.increment(1))
+            .addOnSuccessListener {
+                Log.d("InterestTimer", "Incremento per $category, da parte di $userId")
+            }
+    }
+
+    fun stopInterestTimer() {
+        interestJob?.cancel()
+    }
+
 }

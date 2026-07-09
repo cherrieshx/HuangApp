@@ -1,4 +1,4 @@
-const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onDocumentCreated, onDocumentUpdated, onDocumentDeleted } = require("firebase-functions/v2/firestore");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
@@ -96,4 +96,18 @@ exports.sendFollowNotification = onDocumentUpdated("users/{userId}", async (even
         }
     }
     return null;
+});
+
+exports.onFavoriteCreated = onDocumentCreated("users/{userId}/favorites/{recipeId}", async (event) => {
+    const recipeId = event.params.recipeId;
+    return admin.firestore().collection("recipes").doc(recipeId).update({
+        favoriteCount: admin.firestore.FieldValue.increment(1)
+    });
+});
+
+exports.onFavoriteDeleted = onDocumentDeleted("users/{userId}/favorites/{recipeId}", async (event) => {
+    const recipeId = event.params.recipeId;
+    return admin.firestore().collection("recipes").doc(recipeId).update({
+        favoriteCount: admin.firestore.FieldValue.increment(-1)
+    });
 });

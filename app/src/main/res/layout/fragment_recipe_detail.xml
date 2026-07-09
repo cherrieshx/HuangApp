@@ -118,7 +118,6 @@
                                 android:textSize="16sp" />
                         </LinearLayout>
 
-                        <!-- Categoria -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -237,6 +236,7 @@
                         android:scaleType="centerCrop"
                         android:clickable="true"
                         android:focusable="true"
+                        android:contentDescription="Immagine profilodell'autore"
                         app:imageProfileUrl="@{recipeDetail.userImage}"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
@@ -297,8 +297,9 @@
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
-                        android:src="@drawable/ic_edit"
+                        android:src="@drawable/outline_edit_24"
                         android:visibility="gone"
+                        android:layout_marginRight="5dp"
                         app:layout_constraintEnd_toStartOf="@+id/btn_delete"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent"
@@ -309,7 +310,7 @@
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
-                        android:src="@drawable/ic_delete"
+                        android:src="@drawable/outline_delete_24"
                         android:visibility="gone"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
@@ -321,23 +322,30 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginTop="16dp"
-                    android:background="#EEEEEE" />
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
                     android:layout_marginTop="32dp"
                     android:background="#EEEEEE" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginStart="16dp">
 
-                <TextView
+                    <ImageView
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:src="@drawable/ic_comments"
+                        app:tint="@color/black" />
+
+                    <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="16dp"
                     android:text="Commenti"
                     android:textSize="19sp"
                     android:textStyle="bold"
                     android:textColor="@color/black" />
+
+                </LinearLayout>
 
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"

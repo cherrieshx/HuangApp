@@ -61,11 +61,6 @@ class ProfileViewModel : ViewModel() {
             }
     }
 
-    fun loadUserProfile() {
-        val userId = auth.currentUser?.uid ?: return
-        loadUserProfileById(userId)
-    }
-
     fun loadUserProfileById(userId: String) {
         // Cancella il listener precedente prima di crearne uno nuovo
         profileListener?.remove()

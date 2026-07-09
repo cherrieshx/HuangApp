@@ -9,10 +9,11 @@ import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.toObject
 import it.progmob.huangapp.ui.data.model.Recipes
 
+enum class SortMode { FOR_YOU, POPULAR, TIME_ASC, TIME_DESC }
+
 class HomeViewModel : ViewModel() {
     private val _recipesList = MutableLiveData<List<Recipes>>()
-    val recipesList: LiveData<List<Recipes>> = _recipesList
-
+    val recipesList: MutableLiveData<List<Recipes>> = _recipesList
     private val _userRecipes = MutableLiveData<List<Recipes>>()
     val userRecipes: LiveData<List<Recipes>> = _userRecipes
     private val _favorites = MutableLiveData<List<Recipes>>()
@@ -24,15 +25,18 @@ class HomeViewModel : ViewModel() {
 
     private var fullList = listOf<Recipes>()
     private var isListenerRegistered = false
+    private var isInterestsLoaded = false
 
     var currentCategory = "Tutte"
         private set
     private var currentQuery = ""
-    var isAscending = true
+    private var userFeedCount : Map<String, Int> = emptyMap()
+    var currentSortMode = SortMode.FOR_YOU
         private set
 
+
+    // Carica e aggiorna la lista di ricette in tempo reale
     fun uploadDB() {
-        // Evita di registrare listener multipli ad ogni ritorno sul fragment
         if (isListenerRegistered) return
         isListenerRegistered = true
 
@@ -44,10 +48,9 @@ class HomeViewModel : ViewModel() {
                 }
 
                 if (result != null) {
-                    val list = result.map { document ->
-                        val recipe = document.toObject<Recipes>()
-                        recipe.id = document.id
-                        recipe
+                    val list = result.mapNotNull { document ->
+                        val recipe = document.toObject(Recipes::class.java)
+                        recipe?.apply { id = document.id }
                     }
                     fullList = list
                     applyFilters()
@@ -60,61 +63,78 @@ class HomeViewModel : ViewModel() {
             .addSnapshotListener { doc, _ ->
                 if (doc != null && doc.exists()) {
                     followingIds = (doc.get("following") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
-                    // Se il filtro è attivo, aggiorna la lista appena cambiano i seguiti
                     if (isFollowActive) applyFilters()
                 }
             }
     }
+
     fun toggleFollowingFilter(active: Boolean) {
         isFollowActive = active
         applyFilters()
     }
-    
-    // Chiamato ad ogni onViewCreated: se i dati sono già in memoria riapplica i filtri subito,
-    // altrimenti registra il listener Firestore per la prima volta
+
     fun initOrRefresh() {
         if (isListenerRegistered) {
-            // Dati già presenti, riapplica filtri correnti per aggiornare la UI
             applyFilters()
         } else {
             uploadDB()
         }
     }
 
-    // Funzione unica per gestire Ricerca, Categoria e Tempo
+    fun loadUserInterests(myUid: String) {
+        if (isInterestsLoaded) return
+        db.collection("users").document(myUid)
+            .get()
+            .addOnSuccessListener { doc ->
+                if (doc != null && doc.exists()) {
+                    userFeedCount = (doc.get("feedcount") as? Map<*, *>)
+                        ?.mapKeys { it.key.toString() }
+                        ?.mapValues { (it.value as? Long)?.toInt() ?: 0 } ?: emptyMap<String, Int>()
+                }
+                isInterestsLoaded = true
+                if (fullList.isNotEmpty()) applyFilters()
+            }
+    }
+
+    // Gestisce la logica dei filtri di categoria, ordinamento seguiti e ricerca
     fun applyFilters(
         category: String = currentCategory,
         query: String = currentQuery,
-        ascending: Boolean = isAscending,
-        onlyFollowing: Boolean = isFollowActive
+        onlyFollowing: Boolean = isFollowActive,
+        sortMode: SortMode = currentSortMode
     ) {
         currentCategory = category
         currentQuery = query
-        isAscending = ascending
         isFollowActive = onlyFollowing
+        currentSortMode = sortMode
 
-        var filtered = fullList
+        var filtered = fullList //Tutte le ricette da firebase
 
-        // 1. Filtro Seguiti
-        if (isFollowActive) {
-            filtered = filtered.filter { followingIds.contains(it.userID) }
-        }
-
-        // 2. Filtro Categoria
-        if (category != "Tutte") {
-            filtered = filtered.filter { it.category == category }
-        }
-
-        // 3. Ricerca Query
         if (query.isNotEmpty()) {
             filtered = filtered.filter { it.name.contains(query, ignoreCase = true) }
         }
 
-        // 4. Ordinamento
-        val sorted = if (ascending) {
-            filtered.sortedBy { it.cooktime.toIntOrNull() ?: 0 }
-        } else {
-            filtered.sortedByDescending { it.cooktime.toIntOrNull() ?: 0 }
+        if (isFollowActive) {
+            filtered = filtered.filter { followingIds.contains(it.userID) }
+        }
+
+        if (category != "Tutte") {
+            filtered = filtered.filter { it.category == category }
+        }
+
+        val sorted = when (sortMode) {
+            SortMode.TIME_ASC -> filtered.sortedBy { it.cooktime.toIntOrNull() ?: 0 }
+            SortMode.TIME_DESC -> filtered.sortedByDescending { it.cooktime.toIntOrNull() ?: 0 }
+            SortMode.POPULAR -> filtered.sortedByDescending { it.favoriteCount+it.commentCount }
+            SortMode.FOR_YOU -> filtered.sortedByDescending { recipe ->
+                var score = 0
+                if (followingIds.contains(recipe.userID)) score += 50
+                val interestCount = userFeedCount[recipe.category] ?: 0
+                score += (interestCount * 5)
+                score += (recipe.favoriteCount * 10)
+                score += (recipe.commentCount * 8)
+                score
+            }
         }
 
         _recipesList.postValue(sorted)
@@ -124,22 +144,24 @@ class HomeViewModel : ViewModel() {
         applyFilters(query = query)
     }
 
+    // Logica per ricette dell'utente ricicalndo dalla home
     fun loadUserRecipes(userId: String) {
         db.collection("recipes")
             .whereEqualTo("userID", userId)
             .addSnapshotListener { result, e ->
                 if (e != null) return@addSnapshotListener
-                val list = result?.map { doc ->
-                    val recipe = doc.toObject<Recipes>()
-                    recipe.id = doc.id
-                    recipe
+                val list = result?.mapNotNull { doc ->
+                    val recipe = doc.toObject(Recipes::class.java)
+                    recipe?.apply { id = doc.id }
                 } ?: emptyList()
                 _userRecipes.postValue(list)
             }
     }
+
+    // Logica per ricette preeferitw dell'utente ricicalndo dalla home
     fun loadFavorites(userId: String) {
         db.collection("users").document(userId).collection("favorites")
-            .addSnapshotListener { snapshot,e ->
+            .addSnapshotListener { snapshot, e ->
                 if (e != null) {
                     Log.e("FAV", "Errore listener preferiti: ${e.message}")
                     return@addSnapshotListener
@@ -150,18 +172,17 @@ class HomeViewModel : ViewModel() {
                     _favorites.postValue(emptyList())
                     return@addSnapshotListener
                 }
-                // Recupera i dettagli di ogni ricetta preferita
                 db.collection("recipes")
                     .whereIn(com.google.firebase.firestore.FieldPath.documentId(), favoriteIds)
                     .get()
                     .addOnSuccessListener { result ->
-                        val recipes = result.map { doc ->
-                            val recipe = doc.toObject<Recipes>()
-                            recipe.id = doc.id
-                            recipe
+                        val recipes = result.mapNotNull { doc ->
+                            val recipe = doc.toObject(Recipes::class.java)
+                            recipe?.apply { id = doc.id }
                         }
                         _favorites.postValue(recipes)
                     }
             }
-    }
+        }
+
 }
