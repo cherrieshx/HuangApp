@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
+        <import type="android.view.View" />
         <variable
             name="homevm"
             type="it.progmob.huangapp.viewmodel.HomeViewModel" />
@@ -99,6 +100,13 @@
             android:scrollbars="vertical"
             android:paddingHorizontal="8dp"
             android:clipToPadding="false" />
+        <ProgressBar
+            android:id="@+id/home_progress_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/rosso_salmone"
+            android:visibility="@{homevm.isLoading ? View.VISIBLE : View.GONE}" />
 
     </LinearLayout>
 </layout>

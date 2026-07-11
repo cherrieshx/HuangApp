@@ -71,10 +71,8 @@ class NewRecipeViewModel : ViewModel() {
             }
     }
 
-    // Funzion per la gestione delle liste di ingredienti e passaggi
     fun addItem(list: MutableLiveData<MutableList<String>>) {
         val current = list.value ?: mutableListOf()
-
         if (current.isNotEmpty() && current.last().trim().isEmpty()) {
             _errorMsg.value = "Compila la riga precedente prima di aggiungerne una nuova"
             return
@@ -84,7 +82,6 @@ class NewRecipeViewModel : ViewModel() {
         _errorMsg.value = ""
     }
 
-    // Funzione per la gestione delle liste di ingredienti e passaggi
     fun removeItem(pos: Int, list: MutableLiveData<MutableList<String>>) {
         list.value?.let {
             if (it.size > 1) {
@@ -98,7 +95,6 @@ class NewRecipeViewModel : ViewModel() {
         val current = list.value
         if (current != null && pos in current.indices) {
             current[pos] = text
-            // Se l'utente scrive, togliamo l'errore
             if (text.isNotBlank() && _errorMsg.value?.startsWith("Compila") == true) {
                 _errorMsg.value = ""
             }
@@ -132,30 +128,41 @@ class NewRecipeViewModel : ViewModel() {
                 } else {
                     ""
                 }
-                val recipeData = Recipes(
-                    id = recipeIdToEdit ?: "",
-                    name = n,
-                    description = d,
-                    image = img,
-                    category = cat,
-                    cooktime = time,
-                    ingredients = ing,
-                    steps = stp,
-                    userID = user.uid,
-                    username = nameuser,
-                    userImage = userImg
-                )
 
                 if (isEditing && recipeIdToEdit != null) {
-                    db.collection("recipes").document(recipeIdToEdit!!).set(recipeData)
+                    // Edit ricetta esistente
+                    val updates = mapOf(
+                        "name" to n,
+                        "description" to d,
+                        "image" to img,
+                        "category" to cat,
+                        "cooktime" to time,
+                        "ingredients" to ing,
+                        "steps" to stp,
+                        "username" to nameuser,
+                        "userImage" to userImg
+                    )
+                    db.collection("recipes").document(recipeIdToEdit!!).update(updates)
                         .addOnSuccessListener { onSuccess() }
                         .addOnFailureListener { _errorMsg.value = "Errore aggiornamento: ${it.message}" }
                 } else {
+                    // Nuova ricetta
+                    val recipeData = Recipes(
+                        name = n,
+                        description = d,
+                        image = img,
+                        category = cat,
+                        cooktime = time,
+                        ingredients = ing,
+                        steps = stp,
+                        userID = user.uid,
+                        username = nameuser,
+                        userImage = userImg
+                    )
                     db.collection("recipes").add(recipeData)
                         .addOnSuccessListener { onSuccess() }
                         .addOnFailureListener { _errorMsg.value = "Errore salvataggio: ${it.message}" }
                 }
             }
     }
-
 }

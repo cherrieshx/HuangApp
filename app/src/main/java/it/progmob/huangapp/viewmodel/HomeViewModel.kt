@@ -22,7 +22,7 @@ class HomeViewModel : ViewModel() {
     var isFollowActive = false
         private set
     private val db = Firebase.firestore
-
+    val isLoading = MutableLiveData(true)
     private var fullList = listOf<Recipes>()
     private var isListenerRegistered = false
     private var isInterestsLoaded = false
@@ -39,9 +39,11 @@ class HomeViewModel : ViewModel() {
     fun uploadDB() {
         if (isListenerRegistered) return
         isListenerRegistered = true
+        isLoading.value = true
 
         db.collection("recipes")
             .addSnapshotListener { result, exception ->
+                isLoading.postValue(false)
                 if (exception != null) {
                     Log.w("Firestore", "Errore nel caricamento", exception)
                     return@addSnapshotListener
@@ -127,6 +129,7 @@ class HomeViewModel : ViewModel() {
             SortMode.TIME_DESC -> filtered.sortedByDescending { it.cooktime.toIntOrNull() ?: 0 }
             SortMode.POPULAR -> filtered.sortedByDescending { it.favoriteCount+it.commentCount }
             SortMode.FOR_YOU -> filtered.sortedByDescending { recipe ->
+                // Calcola il punteggio per il feed dell'utente
                 var score = 0
                 if (followingIds.contains(recipe.userID)) score += 50
                 val interestCount = userFeedCount[recipe.category] ?: 0

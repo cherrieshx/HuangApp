@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="background_color">#121212</color>
+    <color name="background_main">#1E1E1E</color>
+    <color name="text_color">#F5F5F5</color>
+    <color name="rosso_salmone">#E9967A</color>
+    <color name="rosso_salmone_chiaro">#4A302D</color>
+    <color name="rosa_salmone_chiaro">#3D2C28</color>
+    <color name="tab_unselected">#999999</color>
+    <color name="grigio_chiaro">#333333</color>
+    <color name="grey">#B0B0B0</color>
+    <color name="white">#1E1E1E</color>
+    <color name="black">#FFFFFF</color>
+</resources>

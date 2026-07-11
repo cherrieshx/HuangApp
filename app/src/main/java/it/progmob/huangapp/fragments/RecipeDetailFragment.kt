@@ -44,7 +44,7 @@ class RecipeDetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        val user = FirebaseAuth.getInstance().currentUser
         val recipeId = arguments?.getString("recipeId") ?: return
 
         // Gestisce scroll alla lista commenti dopo il click ala notifica
@@ -88,6 +88,12 @@ class RecipeDetailFragment : Fragment() {
         // authorId corrente aggiornato dall'observer ma il click listener è registrato una volta sola
         var currentAuthorId: String? = null
         binding.btnFollow.setOnClickListener {
+            val user = FirebaseAuth.getInstance().currentUser
+            if (user == null) {
+                Toast.makeText(context, "Accedi per poter seguire", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(requireContext(), WelcomeActivity::class.java))
+                return@setOnClickListener
+            }
             currentAuthorId?.let { profileVM.clickFollow(it) }
         }
 
@@ -152,6 +158,11 @@ class RecipeDetailFragment : Fragment() {
         }
         binding.btnFavorite.setOnClickListener(null) // rimuove listener precedenti
         binding.btnFavorite.setOnClickListener {
+            if (user == null) {
+                Toast.makeText(context, "Accedi per poter aggiungere ai preferiti", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(requireContext(), WelcomeActivity::class.java))
+                return@setOnClickListener
+            }
             val currentlyFavorite = viewModel.isFavorite.value ?: false
             if (currentlyFavorite) {
                 binding.btnFavorite.setMinAndMaxFrame(0, 10)
@@ -187,7 +198,6 @@ class RecipeDetailFragment : Fragment() {
         }
 
         binding.btnSendComment.setOnClickListener {
-            val user = FirebaseAuth.getInstance().currentUser
             if (user == null) {
                 Toast.makeText(context, "Accedi per poter commentare", Toast.LENGTH_SHORT).show()
                 startActivity(Intent(requireContext(), WelcomeActivity::class.java))

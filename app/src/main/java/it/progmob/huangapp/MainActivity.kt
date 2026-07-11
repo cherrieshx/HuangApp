@@ -180,11 +180,11 @@ class MainActivity : AppCompatActivity() {
         } else if (recipeId != null) {
             // Logica per i commenti
             val extras = intent.extras
-            val rawGoToComments = extras?.get("goToComments")
-            val shouldScroll = when (rawGoToComments) {
-                is Boolean -> rawGoToComments
-                is String -> rawGoToComments.toBoolean()
-                else -> false
+            val shouldScroll = if (intent.hasExtra("goToComments")) {
+                val extras = intent.extras
+                extras?.getBoolean("goToComments") ?: extras?.getString("goToComments")?.toBoolean() ?: false
+            } else {
+                false
             }
             val bundle = Bundle().apply {
                 putString("recipeId", recipeId)

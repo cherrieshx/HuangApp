@@ -150,28 +150,37 @@ class ProfileViewModel : ViewModel() {
         profileListener?.remove()
         followingListener?.remove()
     }
-    
+
     fun uploadProfileImage(fileUri: Uri, onResult: (String?) -> Unit) {
         val userId = auth.currentUser?.uid ?: return
         val fileRef = storage.reference.child("profile_images/$userId")
-        
+
+        // 1. IMPOSTA SU TRUE PER FAR APPARIRE LA BARRA
         isLoading.value = true
 
         fileRef.putFile(fileUri)
             .addOnSuccessListener {
                 fileRef.downloadUrl.addOnSuccessListener { downloadUri ->
                     val url = downloadUri.toString()
+                    // Aggiorna Firestore
                     db.collection("users").document(userId)
                         .update("userImage", url)
-                        .addOnSuccessListener { 
+                        .addOnSuccessListener {
                             isLoading.value = false
-                            onResult(url) 
+                            onResult(url)
                         }
-                        .addOnFailureListener { 
+                        .addOnFailureListener {
                             isLoading.value = false
-                            onResult(null) 
+                            onResult(null)
                         }
+                }.addOnFailureListener {
+                    isLoading.value = false
+                    onResult(null)
                 }
+            }
+            .addOnFailureListener {
+                isLoading.value = false
+                onResult(null)
             }
     }
 

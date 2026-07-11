@@ -52,11 +52,6 @@ class ProfileFragment : Fragment() {
         val targetUserId = arguments?.getString("userId") ?: currentUid ?: return
         val isOwnProfile = targetUserId == currentUid
 
-        // Imposta il titolo della toolbar
-        if (isOwnProfile) {
-            (activity as? AppCompatActivity)?.supportActionBar?.title = "Il mio Profilo"
-        }
-
         binding.profileVM = profileVM
         binding.lifecycleOwner = viewLifecycleOwner
 
@@ -90,6 +85,12 @@ class ProfileFragment : Fragment() {
             profileVM.checkIfFollowing(targetUserId)
             binding.btnFollow.visibility = View.VISIBLE
             binding.btnFollow.setOnClickListener {
+                val user = FirebaseAuth.getInstance().currentUser
+                if (user == null) {
+                    Toast.makeText(context, "Accedi per poter seguire", Toast.LENGTH_SHORT).show()
+                    startActivity(Intent(requireContext(), MainActivity::class.java))
+                    return@setOnClickListener
+                }
                 profileVM.clickFollow(targetUserId)
             }
         }
@@ -124,10 +125,8 @@ class ProfileFragment : Fragment() {
             val bundle = Bundle().apply { putString("title", "Seguiti") }
             findNavController().navigate(R.id.action_ProfileFragment_to_ProfileListFragment, bundle)
         }
-        binding.followingString.setOnClickListener { openFollowing() }
-        binding.followingSize.setOnClickListener { openFollowing() }
-        binding.followersString.setOnClickListener { openFollowers() }
-        binding.followersSize.setOnClickListener { openFollowers() }
+        binding.layoutFollowers.setOnClickListener { openFollowers() }
+        binding.layoutFollowing.setOnClickListener { openFollowing() }
 
         // Setup RecyclerView ricette
         binding.userRecipes.layoutManager = LinearLayoutManager(context)
