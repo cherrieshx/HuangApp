@@ -2,7 +2,6 @@ package it.progmob.huangapp.fragments
 
 import android.graphics.Color
 import android.os.Bundle
-import android.widget.Filter
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View

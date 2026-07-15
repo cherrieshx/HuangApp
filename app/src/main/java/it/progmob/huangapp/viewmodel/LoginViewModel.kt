@@ -16,7 +16,6 @@ class LoginViewModel : ViewModel() {
     private val _loginSuccess = MutableLiveData(false)
     val loginSuccess: LiveData<Boolean> = _loginSuccess
 
-
     fun login() {
         val em = email.value.orEmpty().trim() // Rimuove spazi bianchi inutili
         val pas = password.value.orEmpty()
