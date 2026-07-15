@@ -155,7 +155,6 @@ class ProfileViewModel : ViewModel() {
         val userId = auth.currentUser?.uid ?: return
         val fileRef = storage.reference.child("profile_images/$userId")
 
-        // 1. IMPOSTA SU TRUE PER FAR APPARIRE LA BARRA
         isLoading.value = true
 
         fileRef.putFile(fileUri)
